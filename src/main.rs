@@ -86,25 +86,3 @@ fn generate_strategy_signals(
     updated_trade_signals
 }
 
-// fn run_strategy(
-//     strategy: Strategy,
-//     quotes: &Vec<Quote>,
-//     trade_signals: BTreeMap<String, TradeSignal>
-//     ) -> BTreeMap<String, TradeSignal> {
-//     trade_signals
-// }
-
-// fn update_signal(
-//     trade_signals: BTreeMap<String, TradeSignal>,
-//     trade_signal: &TradeSignal,
-// ) -> BTreeMap<String, TradeSignal> {
-//     // let updated_trade_signal = TradeSignal {};
-//     // trade_signals.insert(trade_signal.ts.to_string(), updated_trade_signal);
-//     trade_signals
-// }
-
-fn print_quotes(quotes: Vec<Quote>) {
-    for quote in quotes {
-        println!("{:?}", quote);
-    }
-}

@@ -3,7 +3,7 @@ pub struct Ticker {
     pub symbol: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Quote {
     pub ticker: String,
     pub ts: f64,

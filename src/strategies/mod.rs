@@ -47,6 +47,7 @@ pub fn expand_strategies(chromosome: &Chromosome) -> Vec<Strategy> {
 }
 
 /// Expands chrosomes to Strategy
+/// 
 pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
@@ -61,6 +62,8 @@ pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
     }
 }
 
+/// Inserts a new, empty signal if the signal does not exist
+///
 fn insert_signal(
     trade_signals: BTreeMap<String, TradeSignal>,
     quote: &Quote,
@@ -76,6 +79,8 @@ fn insert_signal(
     signals
 }
 
+/// Updates existing signal in btreemap
+///
 fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i64) -> TradeSignal {
     let mut strategies = trade_signal.strategies.clone();
     strategies.push(strategy.strategy);
@@ -90,6 +95,20 @@ fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i64) ->
         hard_signal: trade_signal.hard_signal,
         generation: trade_signal.generation,
     }
+}
+
+/// Cast windows from list of quotes
+///
+/// returns tuple: (array of windows, current_quote)
+///
+fn window(quotes: &Vec<Quote>, length: usize) -> Vec<(Vec<Quote>, Quote)> {
+    let mut windows: Vec<(Vec<Quote>, Quote)> = vec![];
+    for n in length..quotes.len() {
+        let start_index = n - length;
+        let window = quotes[start_index..n].to_vec();
+        windows.push((window, quotes[n].clone()));
+    }
+    windows
 }
 
 #[cfg(test)]
@@ -118,6 +137,70 @@ fn test_expand_strategy() {
     assert_eq!(expected.code, actual.code);
     assert_eq!(expected.ticker, actual.ticker);
     assert_eq!(expected.param, actual.param);
+}
+
+#[test]
+fn test_window() {
+    let test_vec = vec![
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528745804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.20,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528746804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.80,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528747804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 999.75,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528748804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.50,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528749804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.49,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528750804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.79,
+        },
+    ];
+    let windows = window(&test_vec, 3);
+    println!("test window: {:?}", windows[0].0[0]);
+    let first_quote = &windows[0].0[0];
+    assert_eq!(first_quote.ticker, "AAPL".to_string());
 }
 
 // #[test]

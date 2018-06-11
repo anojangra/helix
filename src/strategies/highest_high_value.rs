@@ -17,3 +17,4 @@ pub fn call(
     updated_trade_signals
 }
 
+// fn highest_high_value()
