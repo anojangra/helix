@@ -1,0 +1,9 @@
+[package]
+name = "helix"
+version = "0.1.0"
+authors = ["choiway <waynechoi@gmail.com>"]
+
+[dependencies]
+postgres = "0.15"
+uuid = { version = "0.6", features = ["v4"] }
+
