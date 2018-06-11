@@ -6,6 +6,6 @@ pub struct Chromosome {
     pub id: Uuid,
     pub target_ticker: String,
     pub chromosome: String,
-    pub dna: Vec<i64>,
-    pub generation: i64,
+    pub dna: Vec<i32>,
+    pub generation: i32,
 }

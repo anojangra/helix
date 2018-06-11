@@ -59,19 +59,21 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
 fn generate_signals(chromosome: &Chromosome, quotes_repo: &HashMap<String, Vec<Quote>>) {
     let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
     let strategies = strategies::expand_strategies(chromosome);
-
     for strategy in strategies {
         trade_signals = match quotes_repo.get(&strategy.ticker) {
             Some(quotes) => generate_strategy_signals(strategy, trade_signals, quotes),
             None => panic!("this is a terrible mistake!"),
         };
-    }
-
+    };
     for signal in trade_signals {
-        println!("{:?}", signal);
+        if signal.1.signals[0] == 1 {
+            println!("{:?}", signal );
+        }
     }
 }
 
+/// Generate strategy signals
+///
 fn generate_strategy_signals(
     strategy: Strategy,
     trade_signals: BTreeMap<String, TradeSignal>,

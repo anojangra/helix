@@ -1,25 +1,27 @@
 extern crate uuid;
 use uuid::Uuid;
 use strategies::Strategy;
-use schemas::Quote;
+use strategies::Window;
 
 #[derive(Debug)]
 pub struct TradeSignal {
     pub chromosome_id: Uuid,
     pub ts: f64,
     pub strategies: Vec<String>,
-    pub signals: Vec<i64>,
+    pub signals: Vec<i32>,
     pub target_ticker: String,
-    pub hard_signal: i64,
-    pub generation: i64,
+    pub hard_signal: i32,
+    pub generation: i32,
 }
 
-pub fn init_trade_signal(strategy: Strategy, quote: &Quote, signal: i64) -> TradeSignal {
+/// Initializes empty trade signal
+/// 
+pub fn init_trade_signal(strategy: Strategy,window: Window, signal: i32) -> TradeSignal {
     let strategies = vec![strategy.strategy];
     let signals = vec![signal];
     TradeSignal {
         chromosome_id: strategy.chromosome_id,
-        ts: quote.ts,
+        ts: window.current_quote.ts,
         strategies: strategies,
         signals: signals,
         target_ticker: strategy.target_ticker,

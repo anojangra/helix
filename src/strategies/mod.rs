@@ -16,7 +16,13 @@ pub struct Strategy {
     pub ticker: String,
     pub param: i64,
     pub target_ticker: String,
-    pub generation: i64,
+    pub generation: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct Window {
+    pub window: Vec<Quote>,
+    pub current_quote: Quote,
 }
 
 /// Expands chromosome of strategies to a list of strategies
@@ -66,22 +72,23 @@ pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
 ///
 fn insert_signal(
     trade_signals: BTreeMap<String, TradeSignal>,
-    quote: &Quote,
+    window: Window,
     strategy: Strategy,
-    signal: i64,
+    signal: i32,
 ) -> BTreeMap<String, TradeSignal> {
     let mut signals = trade_signals;
-    let trade_signal = match signals.get(&quote.ts.to_string()) {
+    let ts_string = window.current_quote.ts.to_string();
+    let trade_signal = match signals.get(&ts_string) {
         Some(s) => update_signal(s, strategy, signal),
-        None => trade_signal::init_trade_signal(strategy, &quote, signal),
+        None => trade_signal::init_trade_signal(strategy, window, signal),
     };
-    signals.insert(quote.ts.to_string(), trade_signal);
+    signals.insert(ts_string, trade_signal);
     signals
 }
 
 /// Updates existing signal in btreemap
 ///
-fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i64) -> TradeSignal {
+fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i32) -> TradeSignal {
     let mut strategies = trade_signal.strategies.clone();
     strategies.push(strategy.strategy);
     let mut signals = trade_signal.signals.clone();
@@ -101,12 +108,16 @@ fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i64) ->
 ///
 /// returns tuple: (array of windows, current_quote)
 ///
-fn window(quotes: &Vec<Quote>, length: usize) -> Vec<(Vec<Quote>, Quote)> {
-    let mut windows: Vec<(Vec<Quote>, Quote)> = vec![];
+fn window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
+    let mut windows: Vec<Window> = vec![];
     for n in length..quotes.len() {
         let start_index = n - length;
         let window = quotes[start_index..n].to_vec();
-        windows.push((window, quotes[n].clone()));
+        let new_window = Window {
+            window: window,
+            current_quote: quotes[n].clone(),
+        };
+        windows.push(new_window);
     }
     windows
 }
@@ -198,8 +209,7 @@ fn test_window() {
         },
     ];
     let windows = window(&test_vec, 3);
-    println!("test window: {:?}", windows[0].0[0]);
-    let first_quote = &windows[0].0[0];
+    let first_quote = &windows[0].window[0];
     assert_eq!(first_quote.ticker, "AAPL".to_string());
 }
 
