@@ -6,4 +6,5 @@ authors = ["choiway <waynechoi@gmail.com>"]
 [dependencies]
 postgres = "0.15"
 uuid = { version = "0.6", features = ["v4"] }
+rand = "0.5.1"
 

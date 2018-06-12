@@ -93,6 +93,6 @@ fn test_hhv() {
     ];
     let windows = window(&test_vec, 3);
     let first_window = &windows[0];
-    let signal = highest_high_value(&first_window, 3);
-    assert_eq!(0, signal);
+    let signal = highest_high_value(&first_window);
+    assert_eq!(1, signal);
 }
