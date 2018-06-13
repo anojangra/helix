@@ -3,7 +3,6 @@ use chromosome::Chromosome;
 use dna::Dna;
 use uuid;
 
-
 /// Generate chromosomes from dnas
 ///
 pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Vec<Chromosome> {
@@ -18,6 +17,13 @@ pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Ve
             dna: dna,
             generation: generation,
             chromosome_length: strategies_vec.len() as i32,
+            kelly: 0.0,
+            cum_pnl: 0.0,
+            variance: 0.0,
+            mean_return: 0.0,
+            w_kelly: 0.0,
+            num_of_trades: 0,
+            rank: 0,
         };
         chromosomes.push(chromosome);
     }

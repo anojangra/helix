@@ -101,6 +101,7 @@ fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i32) ->
         target_ticker: trade_signal.target_ticker.clone(),
         hard_signal: trade_signal.hard_signal,
         generation: trade_signal.generation,
+        pnl: 0.0,
     }
 }
 
@@ -132,6 +133,13 @@ fn test_expand_strategy() {
         dna: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         generation: 1,
         chromosome_length: 2,
+        kelly: 0.0,
+        cum_pnl: 0.0,
+        variance: 0.0,
+        mean_return: 0.0,
+        w_kelly: 0.0,
+        num_of_trades: 0,
+        rank: 0,
     };
 
     let expected = Strategy {

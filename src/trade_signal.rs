@@ -12,6 +12,7 @@ pub struct TradeSignal {
     pub target_ticker: String,
     pub hard_signal: i32,
     pub generation: i32,
+    pub pnl: f32,
 }
 
 /// Initializes empty trade signal
@@ -27,5 +28,6 @@ pub fn init_trade_signal(strategy: Strategy, window: Window, signal: i32) -> Tra
         target_ticker: strategy.target_ticker,
         hard_signal: 0,
         generation: strategy.generation,
+        pnl: 0.0,
     }
 }

@@ -11,6 +11,13 @@ pub struct Chromosome {
     pub dna: Vec<i32>,
     pub generation: i32,
     pub chromosome_length: i32,
+    pub kelly: f32,
+    pub cum_pnl: f32,
+    pub variance: f32,
+    pub mean_return: f32,
+    pub w_kelly: f32,
+    pub num_of_trades: i32,
+    pub rank: i32,
 }
 
 pub fn decode_dna(code: String, dna: &dna::Dna) -> String {
