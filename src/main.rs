@@ -17,7 +17,6 @@ mod strategies;
 mod trade_signal;
 
 use chromosome::Chromosome;
-use dna::Dna;
 use repo::get_quotes_by_symbol;
 use repo::get_tickers;
 use schemas::Quote;
