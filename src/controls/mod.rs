@@ -1,5 +1,3 @@
-pub mod write_signals;
-
 use chromosome;
 use chromosome::Chromosome;
 use dna::Dna;

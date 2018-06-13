@@ -16,6 +16,7 @@ mod repo;
 mod schemas;
 mod strategies;
 mod trade_signal;
+mod writer;
 
 use chromosome::Chromosome;
 use repo::get_quotes_by_symbol;
@@ -25,6 +26,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
+// use writer;
 
 fn main() {
     println!("Hello, world!");
@@ -40,11 +42,12 @@ fn main() {
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         }
-        for chromosome in chromosomes {
-            // println!("{:?}", chromosome);
-            // Takes 9 seconds
-            repo::insert_chromosome::call(chromosome);
-        }
+        writer::write_chromosomes::call(&chromosomes);
+        // for chromosome in chromosomes {
+        //     // println!("{:?}", chromosome);
+        //     // Takes 9 seconds
+        //     repo::insert_chromosome::call(chromosome);
+        // }
     }
     // generate_signals(&chromosome, &quotes_repo);
     println!("quotes repo has {} keys", quotes_repo.len());
@@ -77,7 +80,7 @@ fn generate_signals(chromosome: &Chromosome, quotes_repo: &HashMap<String, Vec<Q
     }
 
     println!("writing to disk");
-    controls::write_signals::call(trade_signals, chromosome)
+    writer::write_signals::call(trade_signals, chromosome)
     // for signal in trade_signals {
     //     if signal.1.signals[0] == 1 {
     //         println!("{:?}", signal);

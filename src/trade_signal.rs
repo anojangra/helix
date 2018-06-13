@@ -1,7 +1,7 @@
 extern crate uuid;
-use uuid::Uuid;
 use strategies::Strategy;
 use strategies::Window;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct TradeSignal {
@@ -14,10 +14,9 @@ pub struct TradeSignal {
     pub generation: i32,
 }
 
-
 /// Initializes empty trade signal
-/// 
-pub fn init_trade_signal(strategy: Strategy,window: Window, signal: i32) -> TradeSignal {
+///
+pub fn init_trade_signal(strategy: Strategy, window: Window, signal: i32) -> TradeSignal {
     let strategies = vec![strategy.strategy];
     let signals = vec![signal];
     TradeSignal {
