@@ -131,6 +131,7 @@ fn test_expand_strategy() {
         target_ticker: "xlf".to_string(),
         dna: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         generation: 1,
+        chromosome_length: 2,
     };
 
     let expected = Strategy {

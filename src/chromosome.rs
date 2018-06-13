@@ -10,9 +10,10 @@ pub struct Chromosome {
     pub chromosome: String,
     pub dna: Vec<i32>,
     pub generation: i32,
+    pub chromosome_length: i32,
 }
 
-pub fn decode_dna(code: String, dna: dna::Dna) -> String {
+pub fn decode_dna(code: String, dna: &dna::Dna) -> String {
     let mut code = code;
     for base in dna {
         code = expand_code(code, base);
@@ -23,7 +24,7 @@ pub fn decode_dna(code: String, dna: dna::Dna) -> String {
 
 /// Expands dna to code
 ///
-fn expand_code(code: String, base: i32) -> String {
+fn expand_code(code: String, base: &i32) -> String {
     if code.contains("<ticker>") {
         let index = base % config::tickers_length();
         return code.replace("<ticker>", config::TICKERS[index as usize]);
@@ -53,7 +54,7 @@ fn test_modulo() {
 #[test]
 fn test_decode_dna() {
     let dna = vec![241, 252, 253, 8, 13, 118, 184, 1, 225, 54, 141, 95];
-    let chromosome = decode_dna("<code>".to_string(), dna);
+    let chromosome = decode_dna("<code>".to_string(), &dna);
     assert_eq!(
         "hhv:btceUSD:8::gapup:bitstampUSD:1::hhv:krakenEUR:95",
         chromosome
