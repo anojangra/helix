@@ -28,9 +28,9 @@ pub struct TradeRank {
     pub variance: f32,
     pub mean_return: f32,
     pub w_kelly: f32,
-    pub num_of_trades: f32,
-    pub rank: f32,
-    pub generation: f32,
+    pub num_of_trades: i32,
+    pub rank: i32,
+    pub generation: i32,
 }
 
 #[derive(Debug, Clone)]

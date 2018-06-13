@@ -43,11 +43,7 @@ fn main() {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         }
         writer::write_chromosomes::call(&chromosomes);
-        // for chromosome in chromosomes {
-        //     // println!("{:?}", chromosome);
-        //     // Takes 9 seconds
-        //     repo::insert_chromosome::call(chromosome);
-        // }
+        repo::copy_chromosomes::call();
     }
     // generate_signals(&chromosome, &quotes_repo);
     println!("quotes repo has {} keys", quotes_repo.len());
