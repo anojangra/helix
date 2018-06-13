@@ -6,6 +6,7 @@
 extern crate postgres;
 extern crate rand;
 extern crate uuid;
+extern crate chrono;
 
 mod chromosome;
 mod config;
@@ -30,16 +31,19 @@ fn main() {
     // init hash map of quotes
     // key: ticker
     // value: vec of quote
+    // this takes 5 seconds
     let quotes_repo = init_quotes_repo();
     let dnas = dna::generate_dnas(12, 10000);
     for i in 1..2 {
+        println!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         }
-        println!("{}", i);
         for chromosome in chromosomes {
-            println!("{:?}", chromosome);
+            // println!("{:?}", chromosome);
+            // Takes 9 seconds
+            repo::insert_chromosome::call(chromosome);
         }
     }
     // generate_signals(&chromosome, &quotes_repo);
@@ -72,7 +76,7 @@ fn generate_signals(chromosome: &Chromosome, quotes_repo: &HashMap<String, Vec<Q
         };
     }
 
-    println!("wiriting to disk");
+    println!("writing to disk");
     controls::write_signals::call(trade_signals, chromosome)
     // for signal in trade_signals {
     //     if signal.1.signals[0] == 1 {

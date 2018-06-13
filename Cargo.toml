@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["choiway <waynechoi@gmail.com>"]
 
 [dependencies]
-postgres = "0.15"
-uuid = { version = "0.6", features = ["v4"] }
+postgres = { version = "0.15", features = ["with-uuid", "with-time"]}
+uuid = { version = "0.5", features = ["v4"] }
 rand = "0.5.1"
+chrono = "0.4"
+
 
