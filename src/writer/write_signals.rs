@@ -7,7 +7,7 @@ use writer;
 
 /// Write signals to disk
 ///
-pub fn call(signals: BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
+pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     let mut f = File::create("/tmp/output.txt").expect("Unable to create file");
     for signal in signals {
         let s = signal.1;
@@ -16,7 +16,7 @@ pub fn call(signals: BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
             "{}\t{}\t{}\n",
             s.chromosome_id,
             s.ts,
-            writer::fmt_vec_string(s.strategies)
+            writer::fmt_vec_string(s.strategies.clone())
         ).unwrap();
     }
 }

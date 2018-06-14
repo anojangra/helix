@@ -45,8 +45,9 @@ fn main() {
         // writer::write_chromosomes::call(&chromosomes);
         // repo::copy_chromosomes::call();
         for chromosome in chromosomes {
+            println!("processing chromosome: {:?}", chromosome);
             generate_signals(&chromosome, &quotes_repo);
-            panic!("break generation");
+            // panic!("break generation");
         }
     }
     // generate_signals(&chromosome, &quotes_repo);
@@ -73,35 +74,28 @@ fn generate_signals(chromosome: &Chromosome, quotes_repo: &HashMap<String, Vec<Q
     let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
     let strategies = strategies::expand_strategies(chromosome);
     for strategy in strategies {
-        trade_signals = match quotes_repo.get(&strategy.ticker) {
-            Some(quotes) => generate_strategy_signals(strategy, trade_signals, quotes),
+        match quotes_repo.get(&strategy.ticker) {
+            Some(quotes) => generate_strategy_signals(strategy, &mut trade_signals, quotes),
             None => panic!("this is a terrible mistake!"),
         };
     }
-
     println!("writing to disk");
-    writer::write_signals::call(trade_signals, chromosome)
-    // for signal in trade_signals {
-    //     if signal.1.signals[0] == 1 {
-    //         println!("{:?}", signal);
-    //     }
-    // }
+    writer::write_signals::call(&trade_signals, chromosome);
 }
 
 /// Generate strategy signals
 ///
 fn generate_strategy_signals(
     strategy: Strategy,
-    trade_signals: BTreeMap<String, TradeSignal>,
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
-) -> BTreeMap<String, TradeSignal> {
-    println!("quotes len: {}  in run strategy", quotes.len());
-    let updated_trade_signals = match strategy.code.as_ref() {
+) {
+    println!("quotes len: {}  in run strategy: {:?}", quotes.len(), &strategy);
+    match strategy.code.as_ref() {
         "llv" => strategies::lowest_low_value::call(strategy, trade_signals, quotes),
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
-    updated_trade_signals
 }
 
 #[test]

@@ -17,15 +17,15 @@ pub struct TradeSignal {
 
 /// Initializes empty trade signal
 ///
-pub fn init_trade_signal(strategy: Strategy, window: &Window, signal: i32) -> TradeSignal {
-    let strategies = vec![strategy.strategy];
-    let signals = vec![signal];
+pub fn init_trade_signal(strategy: &Strategy, window: &Window, signal: &i32) -> TradeSignal {
+    let strategies = vec![strategy.strategy.clone()];
+    let signals = vec![*signal];
     TradeSignal {
         chromosome_id: strategy.chromosome_id,
         ts: window.current_quote.ts,
         strategies: strategies,
         signals: signals,
-        target_ticker: strategy.target_ticker,
+        target_ticker: strategy.target_ticker.clone(),
         hard_signal: 0,
         generation: strategy.generation,
         pnl: 0.0,

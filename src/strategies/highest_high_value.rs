@@ -8,16 +8,14 @@ use trade_signal::TradeSignal;
 
 pub fn call(
     strategy: Strategy,
-    trade_signals: BTreeMap<String, TradeSignal>,
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
-) -> BTreeMap<String, TradeSignal> {
-    let mut updated_trade_signals = trade_signals;
+)  {
     let windows = window(quotes, strategy.param as usize);
     for w in windows {
         let signal = highest_high_value(&w);
-        updated_trade_signals = insert_signal(updated_trade_signals, w, strategy.clone(), signal);
-    }
-    updated_trade_signals
+        insert_signal(trade_signals, &w, &strategy, &signal);
+    };
 }
 
 /// Calculate highest high in window

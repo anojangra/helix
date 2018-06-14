@@ -8,16 +8,14 @@ use strategies::Window;
 
 pub fn call(
     strategy: Strategy,
-    trade_signals: BTreeMap<String, TradeSignal>,
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
-) -> BTreeMap<String, TradeSignal> {
-    let mut updated_trade_signals = trade_signals;
+) {
     let windows = window(quotes, strategy.param as usize);
     for w in windows {
         let signal = lowest_low_value(&w);
-        updated_trade_signals = insert_signal(updated_trade_signals, w, strategy.clone(), signal);
+        insert_signal(trade_signals, &w, &strategy, &signal);
     }
-    updated_trade_signals
 }
 
 // Calculate lowest low in window

@@ -53,7 +53,7 @@ pub fn expand_strategies(chromosome: &Chromosome) -> Vec<Strategy> {
 }
 
 /// Expands chrosomes to Strategy
-/// 
+///
 pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
@@ -71,29 +71,33 @@ pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
 /// Inserts a new, empty signal if the signal does not exist
 ///
 fn insert_signal(
-    trade_signals: BTreeMap<String, TradeSignal>,
-    window: Window,
-    strategy: Strategy,
-    signal: i32,
-) -> BTreeMap<String, TradeSignal> {
-    let mut signals = trade_signals;
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    window: &Window,
+    strategy: &Strategy,
+    signal: &i32,
+) {
+    // let mut signals = trade_signals;
     let ts_string = window.current_quote.ts.to_string();
-    let trade_signal = match signals.get(&ts_string) {
+    let trade_signal = match trade_signals.get(&ts_string) {
         Some(s) => update_signal(s, strategy, signal),
         None => trade_signal::init_trade_signal(strategy, &window, signal),
     };
-    signals.insert(ts_string, trade_signal);
-    signals
+    // println!("inserting: {:?}", trade_signal);
+    trade_signals.insert(ts_string, trade_signal);
 }
 
 /// Updates existing signal in btreemap
 ///
-fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i32) -> TradeSignal {
+fn update_signal(
+    trade_signal: &TradeSignal,
+    strategy: &Strategy,
+    signal: &i32,
+) -> TradeSignal {
     let mut strategies = trade_signal.strategies.clone();
-    strategies.push(strategy.strategy);
+    strategies.push(strategy.strategy.clone());
     let mut signals = trade_signal.signals.clone();
-    signals.push(signal);
-    TradeSignal {
+    signals.push(signal.clone());
+    let t = TradeSignal {
         chromosome_id: trade_signal.chromosome_id,
         ts: trade_signal.ts,
         strategies: strategies,
@@ -102,7 +106,9 @@ fn update_signal(trade_signal: &TradeSignal, strategy: Strategy, signal: i32) ->
         hard_signal: trade_signal.hard_signal,
         generation: trade_signal.generation,
         pnl: 0.0,
-    }
+    };
+    // println!("update signal: {:?}", t);
+    t
 }
 
 /// Cast windows from list of quotes
