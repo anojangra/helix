@@ -44,3 +44,9 @@ pub struct TradePnl {
     pub cum_pnl: f32,
     pub generation: i32,
 }
+
+#[derive(Debug, Clone)]
+pub struct Return {
+    pub ts: f64,
+    pub ret: f32,
+}

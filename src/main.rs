@@ -42,8 +42,12 @@ fn main() {
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         }
-        writer::write_chromosomes::call(&chromosomes);
-        repo::copy_chromosomes::call();
+        // writer::write_chromosomes::call(&chromosomes);
+        // repo::copy_chromosomes::call();
+        for chromosome in chromosomes {
+            generate_signals(&chromosome, &quotes_repo);
+            panic!("break generation");
+        }
     }
     // generate_signals(&chromosome, &quotes_repo);
     println!("quotes repo has {} keys", quotes_repo.len());

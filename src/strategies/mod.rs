@@ -80,7 +80,7 @@ fn insert_signal(
     let ts_string = window.current_quote.ts.to_string();
     let trade_signal = match signals.get(&ts_string) {
         Some(s) => update_signal(s, strategy, signal),
-        None => trade_signal::init_trade_signal(strategy, window, signal),
+        None => trade_signal::init_trade_signal(strategy, &window, signal),
     };
     signals.insert(ts_string, trade_signal);
     signals

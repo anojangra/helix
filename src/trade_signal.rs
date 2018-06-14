@@ -3,7 +3,7 @@ use strategies::Strategy;
 use strategies::Window;
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TradeSignal {
     pub chromosome_id: Uuid,
     pub ts: f64,
@@ -17,7 +17,7 @@ pub struct TradeSignal {
 
 /// Initializes empty trade signal
 ///
-pub fn init_trade_signal(strategy: Strategy, window: Window, signal: i32) -> TradeSignal {
+pub fn init_trade_signal(strategy: Strategy, window: &Window, signal: i32) -> TradeSignal {
     let strategies = vec![strategy.strategy];
     let signals = vec![signal];
     TradeSignal {
