@@ -47,55 +47,22 @@ fn main() {
         }
         // writer::write_chromosomes::call(&chromosomes);
         // repo::copy_chromosomes::call();
-        let local = chromosomes.clone();
-        for (i, chromosome) in local.iter().enumerate() {
+        // let local = chromosomes.clone();
+        for i in 0..chromosomes.len() {
             // println!("processing chromosome: {:?}", chromosome);
+            let chromosome = &mut chromosomes[i];
             let mut trade_signals = generate_signals(chromosome, &quotes_repo);
-            // Merge returns
-            merge_returns(&mut trade_signals, &returns);
-            // Calc hard trade signal
-            calc_pnl(&mut trade_signals, chromosome);
-            // Write signals to disk
             println!("writing to disk");
             writer::write_signals::call(&trade_signals);
-            // Filter trade signals with hard signals
-            let signaled_trades: Vec<TradeSignal> = trade_signals
-                .into_iter()
-                .map(|x| x.1)
-                .filter(|signal| signal.hard_signal == 1)
-                .collect();
-
-            // Calculate pnl
-            let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
-            let mean_return = mean_return(&signaled_trades);
-            let variance = variance(&signaled_trades);
-            let kelly = kelly(mean_return, variance);
-            let num_of_trades = signaled_trades.len() as i32;
-
-            let updated_chromosome = Chromosome {
-                id: chromosome.id,
-                chromosome: chromosome.chromosome.clone(),
-                chromosome_length: chromosome.chromosome_length,
-                dna: chromosome.dna.clone(),
-                generation: chromosome.generation,
-                target_ticker: chromosome.target_ticker.clone(),
-                cum_pnl: cum_pnl,
-                mean_return: mean_return,
-                variance: variance,
-                kelly: kelly,
-                num_of_trades: num_of_trades,
-                w_kelly: kelly * num_of_trades as f32,
-                rank: chromosome.rank,
-            };
-            // Update chromosomes
-            chromosomes[i] = updated_chromosome;
+            merge_returns(&mut trade_signals, &returns);
+            calc_pnl(&mut trade_signals, chromosome);
+            update_chromosome(chromosome, trade_signals);
         }
         chromosomes.sort_by_key(|c| c.w_kelly.to_string());
         for chromosome in chromosomes {
             println!{"{:?}", chromosome};
         }
     }
-
     println!("quotes repo has {} keys", quotes_repo.len());
 }
 
@@ -234,6 +201,27 @@ fn generate_strategy_signals(
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
+}
+
+fn update_chromosome(chromosome: &mut Chromosome, trade_signals: BTreeMap<String, TradeSignal>) {
+    let signaled_trades: Vec<TradeSignal> = trade_signals
+        .into_iter()
+        .map(|x| x.1)
+        .filter(|signal| signal.hard_signal == 1)
+        .collect();
+    // Calculate pnl
+    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
+    let mean_return = mean_return(&signaled_trades);
+    let variance = variance(&signaled_trades);
+    let kelly = kelly(mean_return, variance);
+    let num_of_trades = signaled_trades.len() as i32;
+    // Update chromosome
+    chromosome.cum_pnl = cum_pnl;
+    chromosome.mean_return = mean_return;
+    chromosome.variance = variance;
+    chromosome.kelly = kelly;
+    chromosome.num_of_trades = num_of_trades;
+    chromosome.w_kelly = kelly * num_of_trades as f32;
 }
 
 #[test]
