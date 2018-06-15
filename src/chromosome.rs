@@ -3,7 +3,7 @@ use config;
 use dna;
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chromosome {
     pub id: Uuid,
     pub target_ticker: String,
