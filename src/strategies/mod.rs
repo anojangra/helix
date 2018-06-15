@@ -53,7 +53,6 @@ pub fn expand_strategies(chromosome: &Chromosome) -> Vec<Strategy> {
 }
 
 /// Expands chrosomes to Strategy
-///
 pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
@@ -69,7 +68,6 @@ pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
 }
 
 /// Inserts a new, empty signal if the signal does not exist
-///
 fn insert_signal(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     window: &Window,
@@ -81,20 +79,16 @@ fn insert_signal(
         Some(s) => update_signal(s, strategy, signal),
         None => trade_signal::init_trade_signal(strategy, &window, signal),
     };
-    // println!("inserting: {:?}", trade_signal);
     trade_signals.insert(ts_string, trade_signal);
 }
 
 /// Updates existing signal in btreemap
-///
 fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) -> TradeSignal {
     let mut strategies = trade_signal.strategies.clone();
     strategies.push(strategy.strategy.clone());
-
     let mut signals = trade_signal.signals.clone();
     signals.push(signal.clone());
-
-    let t = TradeSignal {
+    TradeSignal {
         chromosome_id: trade_signal.chromosome_id,
         ts: trade_signal.ts,
         strategies: strategies,
@@ -104,9 +98,7 @@ fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) 
         generation: trade_signal.generation,
         pnl: 0.0,
         ret: 0.0,
-    };
-    // println!("update signal: {:?}", t);
-    t
+    }
 }
 
 /// Cast windows from list of quotes

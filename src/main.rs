@@ -37,13 +37,20 @@ fn main() {
     // value: vec of quote
     // this takes 5 seconds
     let quotes_repo = init_quotes_repo();
-    let dnas = dna::generate_dnas(12, 5);
+    let dnas = dna::generate_dnas(12, 10);
     let returns = init_returns();
-    for i in 1..2 {
+    let mut ranked_chromosomes: Vec<Chromosome> = vec![];
+    for i in 1..3 {
         println!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
+        } else {
+            let start = &ranked_chromosomes.len() - 5;
+            let fittest_chromosomes = &ranked_chromosomes[start..];
+            println!("fittest chromosomes: {:?}", fittest_chromosomes);
+            chromosomes = fittest_chromosomes.to_vec();
+            panic!("no more generations");
         }
         // writer::write_chromosomes::call(&chromosomes);
         // repo::copy_chromosomes::call();
@@ -58,16 +65,23 @@ fn main() {
             calc_pnl(&mut trade_signals, chromosome);
             update_chromosome(chromosome, trade_signals);
         }
+
         chromosomes.sort_by_key(|c| c.w_kelly.to_string());
-        for chromosome in chromosomes {
+
+        for i in 0..chromosomes.len() {
+            let chromosome = &mut chromosomes[i];
+            chromosome.rank = i as i32 + 1;
+        }
+
+        for chromosome in &chromosomes {
             println!{"{:?}", chromosome};
         }
+
+        ranked_chromosomes = chromosomes;
     }
-    println!("quotes repo has {} keys", quotes_repo.len());
 }
 
 /// Initializes hashmap for quotes
-///
 fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
     let mut repo = HashMap::new();
     for ticker in get_tickers::call() {
@@ -79,7 +93,6 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
 }
 
 /// Initializes Btreemap for returns
-///
 fn init_returns() -> BTreeMap<String, Return> {
     let mut repo: BTreeMap<String, Return> = BTreeMap::new();
     for ret in repo::get_returns::call(config::TARGET_TICKER.to_string()) {
@@ -125,6 +138,7 @@ fn merge_returns(
     }
 }
 
+/// Update merge trade signal
 fn update_merge_trade_signal(
     trade_signal: &TradeSignal,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
