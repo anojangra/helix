@@ -12,6 +12,7 @@ pub struct TradeSignal {
     pub target_ticker: String,
     pub hard_signal: i32,
     pub generation: i32,
+    pub ret: f32,
     pub pnl: f32,
 }
 
@@ -28,6 +29,7 @@ pub fn init_trade_signal(strategy: &Strategy, window: &Window, signal: &i32) -> 
         target_ticker: strategy.target_ticker.clone(),
         hard_signal: 0,
         generation: strategy.generation,
+        ret: 0.0,
         pnl: 0.0,
     }
 }

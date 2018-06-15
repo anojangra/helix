@@ -3,10 +3,10 @@
 //! Where does the rest of this go?
 //!
 
+extern crate chrono;
 extern crate postgres;
 extern crate rand;
 extern crate uuid;
-extern crate chrono;
 
 mod chromosome;
 mod config;
@@ -22,6 +22,7 @@ use chromosome::Chromosome;
 use repo::get_quotes_by_symbol;
 use repo::get_tickers;
 use schemas::Quote;
+use schemas::Return;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use strategies::Strategy;
@@ -35,7 +36,8 @@ fn main() {
     // value: vec of quote
     // this takes 5 seconds
     let quotes_repo = init_quotes_repo();
-    let dnas = dna::generate_dnas(12, 10000);
+    let dnas = dna::generate_dnas(12, 5);
+    let returns = init_returns();
     for i in 1..2 {
         println!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
@@ -46,7 +48,24 @@ fn main() {
         // repo::copy_chromosomes::call();
         for chromosome in chromosomes {
             println!("processing chromosome: {:?}", chromosome);
-            generate_signals(&chromosome, &quotes_repo);
+            let mut trade_signals = generate_signals(&chromosome, &quotes_repo);
+
+            // Merge returns
+            merge_returns(&mut trade_signals, &returns);
+
+            // Calc hard trade signal
+            calc_pnl(&mut trade_signals, &chromosome);
+
+            // Calculate pnl based on trades
+
+            // Calculate
+
+            println!("writing to disk");
+            writer::write_signals::call(&trade_signals);
+
+            for t in trade_signals {
+                println!("final trade signal: {:?}", t);
+            }
             // panic!("break generation");
         }
     }
@@ -66,21 +85,86 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
     repo
 }
 
+/// Initializes Btreemap for returns
+///
+fn init_returns() -> BTreeMap<String, Return> {
+    let mut repo: BTreeMap<String, Return> = BTreeMap::new();
+    for ret in repo::get_returns::call(config::TARGET_TICKER.to_string()) {
+        let ts = ret.ts.to_string();
+        repo.insert(ts, ret);
+    }
+    repo
+}
+
 /// Run strategy
 ///
 /// Splits chromosome to strategies
 ///
-fn generate_signals(chromosome: &Chromosome, quotes_repo: &HashMap<String, Vec<Quote>>) {
+fn generate_signals(
+    chromosome: &Chromosome,
+    quotes_repo: &HashMap<String, Vec<Quote>>,
+) -> BTreeMap<String, TradeSignal> {
     let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
     let strategies = strategies::expand_strategies(chromosome);
     for strategy in strategies {
         match quotes_repo.get(&strategy.ticker) {
-            Some(quotes) => generate_strategy_signals(strategy, &mut trade_signals, quotes),
+            Some(quotes) => {
+                generate_strategy_signals(strategy, &mut trade_signals, quotes);
+            }
             None => panic!("this is a terrible mistake!"),
         };
     }
-    println!("writing to disk");
-    writer::write_signals::call(&trade_signals, chromosome);
+    trade_signals
+}
+
+/// Merge returns into trade signals
+fn merge_returns(
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    returns: &BTreeMap<String, Return>,
+) {
+    let local = trade_signals.clone();
+    for key_value in &local {
+        let ts_string = key_value.1.ts.to_string();
+        match local.get(&ts_string) {
+            Some(s) => update_merge_trade_signal(s, trade_signals, &returns, &ts_string),
+            None => (),
+        };
+    }
+}
+
+fn update_merge_trade_signal(
+    trade_signal: &TradeSignal,
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    returns: &BTreeMap<String, Return>,
+    ts_string: &String,
+) {
+    match returns.get(ts_string) {
+        Some(ret) => {
+            let t = trade_signal.clone();
+            let updated = TradeSignal { ret: ret.ret, ..t };
+            trade_signals.insert(ts_string.clone(), updated);
+        }
+        None => (),
+    };
+}
+
+// Calculate hard signal and pnl
+fn calc_pnl (
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    chromosome: &Chromosome,
+) {
+    let local = trade_signals.clone();
+    for trade_signal in &local {
+        let mut s = trade_signal.1.clone();
+        let agg_signal: i32 = s.signals.iter().sum();
+        if chromosome.chromosome_length == agg_signal {
+            println!("hard signal");
+            s.hard_signal = 1;
+            s.pnl = s.ret * 1.0;
+        }
+
+        trade_signals.insert(trade_signal.0.clone(), s);
+    }
 }
 
 /// Generate strategy signals
@@ -90,7 +174,6 @@ fn generate_strategy_signals(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
 ) {
-    println!("quotes len: {}  in run strategy: {:?}", quotes.len(), &strategy);
     match strategy.code.as_ref() {
         "llv" => strategies::lowest_low_value::call(strategy, trade_signals, quotes),
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),

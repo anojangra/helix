@@ -74,9 +74,8 @@ fn insert_signal(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     window: &Window,
     strategy: &Strategy,
-    signal: &i32,
+    signal: &i32
 ) {
-    // let mut signals = trade_signals;
     let ts_string = window.current_quote.ts.to_string();
     let trade_signal = match trade_signals.get(&ts_string) {
         Some(s) => update_signal(s, strategy, signal),
@@ -88,15 +87,13 @@ fn insert_signal(
 
 /// Updates existing signal in btreemap
 ///
-fn update_signal(
-    trade_signal: &TradeSignal,
-    strategy: &Strategy,
-    signal: &i32,
-) -> TradeSignal {
+fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) -> TradeSignal {
     let mut strategies = trade_signal.strategies.clone();
     strategies.push(strategy.strategy.clone());
+
     let mut signals = trade_signal.signals.clone();
     signals.push(signal.clone());
+
     let t = TradeSignal {
         chromosome_id: trade_signal.chromosome_id,
         ts: trade_signal.ts,
@@ -106,6 +103,7 @@ fn update_signal(
         hard_signal: trade_signal.hard_signal,
         generation: trade_signal.generation,
         pnl: 0.0,
+        ret: 0.0,
     };
     // println!("update signal: {:?}", t);
     t
@@ -227,12 +225,3 @@ fn test_window() {
     let first_quote = &windows[0].window[0];
     assert_eq!(first_quote.ticker, "AAPL".to_string());
 }
-
-// #[test]
-// fn test_expand_strategies() {
-//     let actual = expand_strategies("llv:krakenUSD:2::hhv:krakenUSD:5".to_string());
-
-//     assert_eq!("llv".to_string(), actual[0].name);
-//     assert_eq!("krakenUSD".to_string(), actual[0].ticker);
-//     assert_eq!(2, actual[0].param);
-// }

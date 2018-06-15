@@ -1,10 +1,10 @@
 use schemas::Quote;
 use std::collections::BTreeMap;
-use strategies::Strategy;
-use trade_signal::TradeSignal;
 use strategies::insert_signal;
 use strategies::window;
+use strategies::Strategy;
 use strategies::Window;
+use trade_signal::TradeSignal;
 
 pub fn call(
     strategy: Strategy,
@@ -21,7 +21,7 @@ pub fn call(
 // Calculate lowest low in window
 //
 fn lowest_low_value(window: &Window) -> i32 {
-    let low_values: Vec<f32> = window.window.iter().map(|quote| {quote.low}).collect();
+    let low_values: Vec<f32> = window.window.iter().map(|quote| quote.low).collect();
     let lowest_value = low_values.iter().fold(0_f32, |acc, x| acc.min(*x));
     if window.current_quote.close < lowest_value {
         return 1;
