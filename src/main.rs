@@ -27,6 +27,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
+
 // use writer;
 
 fn main() {
@@ -56,16 +57,37 @@ fn main() {
             // Calc hard trade signal
             calc_pnl(&mut trade_signals, &chromosome);
 
-            // Calculate pnl based on trades
-
-            // Calculate
-
             println!("writing to disk");
             writer::write_signals::call(&trade_signals);
 
-            for t in trade_signals {
-                println!("final trade signal: {:?}", t);
-            }
+            // for t in &trade_signals {
+            //     println!("final trade signal: {:?}", t);
+            // }
+
+            // Filter trade signals with hard signals
+            let signaled_trades: Vec<TradeSignal> = trade_signals
+                .into_iter()
+                .map(|x| x.1)
+                .filter(|signal| signal.hard_signal == 1)
+                .collect();
+
+            // Calculate pnl
+            let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
+            let mean_return = mean_return(&signaled_trades);
+            let variance = variance(&signaled_trades);
+            let kelly = kelly(mean_return, variance);
+            let num_of_trades = signaled_trades.len() as i32;
+
+            let mut updated_chromosome = chromosome;
+            updated_chromosome.cum_pnl = cum_pnl;
+            updated_chromosome.mean_return = mean_return;
+            updated_chromosome.variance = variance;
+            updated_chromosome.kelly = kelly;
+            updated_chromosome.num_of_trades = num_of_trades;
+            updated_chromosome.w_kelly = kelly * num_of_trades as f32;
+
+            println!("updated chromosomel: {:?}", updated_chromosome);
+
             // panic!("break generation");
         }
     }
@@ -149,22 +171,48 @@ fn update_merge_trade_signal(
 }
 
 // Calculate hard signal and pnl
-fn calc_pnl (
-    trade_signals: &mut BTreeMap<String, TradeSignal>,
-    chromosome: &Chromosome,
-) {
+fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     let local = trade_signals.clone();
     for trade_signal in &local {
         let mut s = trade_signal.1.clone();
         let agg_signal: i32 = s.signals.iter().sum();
         if chromosome.chromosome_length == agg_signal {
-            println!("hard signal");
             s.hard_signal = 1;
             s.pnl = s.ret * 1.0;
         }
 
         trade_signals.insert(trade_signal.0.clone(), s);
     }
+}
+
+fn mean_return(signaled_trades: &Vec<TradeSignal>) -> f32 {
+    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
+    if signaled_trades.len() > 0 {
+        let mean_return: f32 = cum_pnl / signaled_trades.len() as f32;
+        return mean_return;
+    };
+    return 0.0 as f32;
+}
+
+fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
+    if signaled_trades.len() > 0 {
+        let mean = mean_return(&signaled_trades);
+        let diffs: Vec<f32> = signaled_trades
+            .iter()
+            .map(|x| (x.pnl - mean).powi(2) as f32)
+            .collect();
+        let sum_diffs: f32 = diffs.iter().sum();
+        let v: f32 = sum_diffs / signaled_trades.len() as f32;
+        return v;
+    }
+    0.0
+}
+
+fn kelly(mean: f32, variance: f32) -> f32 {
+    if variance > 0.0 {
+        return mean / variance;
+    }
+    return 0.0;
 }
 
 /// Generate strategy signals
