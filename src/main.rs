@@ -2,6 +2,9 @@
 //!
 //! Where does the rest of this go?
 //!
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 
 extern crate chrono;
 extern crate postgres;
@@ -11,6 +14,7 @@ extern crate uuid;
 mod chromosome;
 mod config;
 mod controls;
+mod darwin;
 mod dna;
 mod repo;
 mod schemas;
@@ -31,26 +35,26 @@ use trade_signal::TradeSignal;
 // use writer;
 
 fn main() {
-    println!("Hello, world!");
+    env_logger::init();
+    info!("Hello, world!");
     // init hash map of quotes
     // key: ticker
     // value: vec of quote
     // this takes 5 seconds
     let quotes_repo = init_quotes_repo();
-    let dnas = dna::generate_dnas(12, 10);
+    let dnas = dna::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
+    // println!("Init tables");
+    // repo::init::init_trade_signals();
+    // repo::init::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
-    for i in 1..3 {
-        println!("Running generation: {}", i);
+    for i in 1..4 {
+        info!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
-            let start = &ranked_chromosomes.len() - 5;
-            let fittest_chromosomes = &ranked_chromosomes[start..];
-            println!("fittest chromosomes: {:?}", fittest_chromosomes);
-            chromosomes = fittest_chromosomes.to_vec();
-            panic!("no more generations");
+            chromosomes = darwin::evolve(ranked_chromosomes, i);
         }
         // writer::write_chromosomes::call(&chromosomes);
         // repo::copy_chromosomes::call();
@@ -59,25 +63,19 @@ fn main() {
             // println!("processing chromosome: {:?}", chromosome);
             let chromosome = &mut chromosomes[i];
             let mut trade_signals = generate_signals(chromosome, &quotes_repo);
-            println!("writing to disk");
-            writer::write_signals::call(&trade_signals);
+            writer::write_signals::call(&trade_signals, &chromosome);
             merge_returns(&mut trade_signals, &returns);
             calc_pnl(&mut trade_signals, chromosome);
             update_chromosome(chromosome, trade_signals);
         }
 
-        chromosomes.sort_by_key(|c| c.w_kelly.to_string());
-
+        chromosomes.sort_by_key(|c| c.w_kelly as i32);
         for i in 0..chromosomes.len() {
             let chromosome = &mut chromosomes[i];
             chromosome.rank = i as i32 + 1;
         }
-
-        for chromosome in &chromosomes {
-            println!{"{:?}", chromosome};
-        }
-
         ranked_chromosomes = chromosomes;
+        writer::write_chromosomes::call(&ranked_chromosomes);
     }
 }
 
@@ -237,6 +235,14 @@ fn update_chromosome(chromosome: &mut Chromosome, trade_signals: BTreeMap<String
     chromosome.num_of_trades = num_of_trades;
     chromosome.w_kelly = kelly * num_of_trades as f32;
 }
+
+// fn upload_signals() {
+
+// }
+
+// fn upload_chromosomes() {
+
+// }
 
 #[test]
 fn test_for_loop() {

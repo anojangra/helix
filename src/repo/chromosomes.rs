@@ -1,8 +1,14 @@
-use chromosome::Chromosome;
 use repo::pg;
 use repo::sql;
+use chromosome::Chromosome;
 
-pub fn call(c: Chromosome) {
+pub fn copy() {
+    let conn = pg::connect();
+    conn.execute("COPY trade_chromosomes FROM '/tmp/chromosomes.txt';", &[])
+        .unwrap();
+}
+
+pub fn insert(c: Chromosome) {
     let conn = pg::connect();
     conn.execute(
         sql::insert_chromosome::sql(),
