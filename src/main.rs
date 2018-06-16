@@ -62,7 +62,10 @@ fn main() {
             let r_clone = returns.clone();
             let tx_n = c_tx.clone();
             let t_rx = throttle_rx.clone();
+
             throttle_tx.send(1);
+            debug!("Throttle length: {}", throttle_rx.len());
+            
             thread::spawn(move || {
                 tx_n.send(process_chromosome(&chromosome, q_clone, r_clone))
                     .unwrap();
@@ -73,6 +76,7 @@ fn main() {
         ranked_chromosomes = rank_chromosomes(&mut updated_chromosomes);
         writer::write_chromosomes::call(&ranked_chromosomes);
     }
+    info!("So long and thanks for all the fish!");
 }
 
 /// Initializes hashmap for quotes
