@@ -43,17 +43,17 @@ pub struct Window {
 ///     }
 /// ]
 ///
-pub fn expand_strategies(chromosome: &Chromosome) -> Vec<Strategy> {
+pub fn expand_strategies(chromosome: Chromosome) -> Vec<Strategy> {
     let strategies: Vec<&str> = chromosome.chromosome.split("::").collect();
     let expanded_strategies = strategies
         .into_iter()
-        .map(|s| expand_strategy(chromosome, s.to_string()))
+        .map(|s| expand_strategy(chromosome.clone(), s.to_string()))
         .collect();
     expanded_strategies
 }
 
 /// Expands chrosomes to Strategy
-pub fn expand_strategy(chromosome: &Chromosome, strategy: String) -> Strategy {
+pub fn expand_strategy(chromosome: Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
     Strategy {
@@ -148,7 +148,7 @@ fn test_expand_strategy() {
         generation: chromosome.generation,
     };
 
-    let actual = expand_strategy(&chromosome, "llv:krakenUSD:2".to_string());
+    let actual = expand_strategy(chromosome, "llv:krakenUSD:2".to_string());
 
     assert_eq!(expected.code, actual.code);
     assert_eq!(expected.ticker, actual.ticker);

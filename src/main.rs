@@ -10,6 +10,7 @@ extern crate chrono;
 extern crate postgres;
 extern crate rand;
 extern crate uuid;
+extern crate threadpool;
 
 mod chromosome;
 mod config;
@@ -31,6 +32,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
+use threadpool::ThreadPool;
 
 // use writer;
 
@@ -40,7 +42,7 @@ fn main() {
     // init hash map of quotes
     // key: ticker
     // value: vec of quote
-    // this takes 5 seconds
+    // this takes 7 seconds
     let quotes_repo = init_quotes_repo();
     let dnas = dna::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
@@ -54,27 +56,33 @@ fn main() {
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
+            panic!("no mas");
             chromosomes = darwin::evolve(ranked_chromosomes, i);
         }
         // writer::write_chromosomes::call(&chromosomes);
         // repo::copy_chromosomes::call();
         // let local = chromosomes.clone();
-        for i in 0..chromosomes.len() {
+        let pool = ThreadPool::new(8);
+        let mut updated_chromosomes: Vec<Chromosome> = vec![];
+        for chromosome in chromosomes {
             // println!("processing chromosome: {:?}", chromosome);
-            let chromosome = &mut chromosomes[i];
-            let mut trade_signals = generate_signals(chromosome, &quotes_repo);
-            writer::write_signals::call(&trade_signals, &chromosome);
-            merge_returns(&mut trade_signals, &returns);
-            calc_pnl(&mut trade_signals, chromosome);
-            update_chromosome(chromosome, trade_signals);
+            let q_clone = quotes_repo.clone();
+            let r_clone = returns.clone();
+            let mut updated_chromosome = chromosome.clone();
+            pool.execute(move || {
+                updated_chromosome = process_chromosome(&chromosome, q_clone, r_clone);
+            });
+            // updated_chromosomes.push(updated_chromosome.clone());
         }
 
-        chromosomes.sort_by_key(|c| c.w_kelly as i32);
-        for i in 0..chromosomes.len() {
-            let chromosome = &mut chromosomes[i];
+        pool.join();
+
+        updated_chromosomes.sort_by_key(|c| c.w_kelly as i32);
+        for i in 0..updated_chromosomes.len() {
+            let chromosome = &mut updated_chromosomes[i];
             chromosome.rank = i as i32 + 1;
         }
-        ranked_chromosomes = chromosomes;
+        ranked_chromosomes = updated_chromosomes;
         writer::write_chromosomes::call(&ranked_chromosomes);
     }
 }
@@ -100,16 +108,24 @@ fn init_returns() -> BTreeMap<String, Return> {
     repo
 }
 
+fn process_chromosome(chromosome: &Chromosome, quotes_repo: HashMap<String, Vec<Quote>>, returns: BTreeMap<String, Return>) -> Chromosome{
+    let mut trade_signals = generate_signals(&chromosome, quotes_repo);
+    writer::write_signals::call(&trade_signals, &chromosome);
+    merge_returns(&mut trade_signals, &returns);
+    calc_pnl(&mut trade_signals, chromosome.clone());
+    update_chromosome(chromosome.clone(), trade_signals)
+}
+
 /// Run strategy
 ///
 /// Splits chromosome to strategies
 ///
 fn generate_signals(
     chromosome: &Chromosome,
-    quotes_repo: &HashMap<String, Vec<Quote>>,
+    quotes_repo: HashMap<String, Vec<Quote>>,
 ) -> BTreeMap<String, TradeSignal> {
     let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
-    let strategies = strategies::expand_strategies(chromosome);
+    let strategies = strategies::expand_strategies(chromosome.clone());
     for strategy in strategies {
         match quotes_repo.get(&strategy.ticker) {
             Some(quotes) => {
@@ -154,7 +170,7 @@ fn update_merge_trade_signal(
 }
 
 // Calculate hard signal and pnl
-fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
+fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: Chromosome) {
     let local = trade_signals.clone();
     for trade_signal in &local {
         let mut s = trade_signal.1.clone();
@@ -215,7 +231,8 @@ fn generate_strategy_signals(
     };
 }
 
-fn update_chromosome(chromosome: &mut Chromosome, trade_signals: BTreeMap<String, TradeSignal>) {
+fn update_chromosome(chromosome: Chromosome, trade_signals: BTreeMap<String, TradeSignal>) -> Chromosome {
+    let mut updated_chromosome = chromosome.clone();
     let signaled_trades: Vec<TradeSignal> = trade_signals
         .into_iter()
         .map(|x| x.1)
@@ -228,12 +245,13 @@ fn update_chromosome(chromosome: &mut Chromosome, trade_signals: BTreeMap<String
     let kelly = kelly(mean_return, variance);
     let num_of_trades = signaled_trades.len() as i32;
     // Update chromosome
-    chromosome.cum_pnl = cum_pnl;
-    chromosome.mean_return = mean_return;
-    chromosome.variance = variance;
-    chromosome.kelly = kelly;
-    chromosome.num_of_trades = num_of_trades;
-    chromosome.w_kelly = kelly * num_of_trades as f32;
+    updated_chromosome.cum_pnl = cum_pnl;
+    updated_chromosome.mean_return = mean_return;
+    updated_chromosome.variance = variance;
+    updated_chromosome.kelly = kelly;
+    updated_chromosome.num_of_trades = num_of_trades;
+    updated_chromosome.w_kelly = kelly * num_of_trades as f32;
+    updated_chromosome
 }
 
 // fn upload_signals() {
