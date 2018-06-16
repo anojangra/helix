@@ -8,7 +8,6 @@ use trade_signal::TradeSignal;
 use writer;
 
 /// Write signals to disk
-///
 pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     debug!("writing id: {} to disk", chromosome.id);
     print!(".");
