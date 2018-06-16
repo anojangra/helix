@@ -31,7 +31,6 @@ use schemas::Return;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::mpsc::channel;
-use std::sync::mpsc::sync_channel;
 use std::thread;
 use strategies::Strategy;
 use trade_signal::TradeSignal;

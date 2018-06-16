@@ -1,9 +1,9 @@
 use chromosome::Chromosome;
 use config;
+use controls;
 use dna::Dna;
 use rand;
 use rand::prelude::*;
-use controls;
 
 pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chromosome> {
     let start = &ranked_chromosomes.len() - config::FITTEST;
@@ -73,15 +73,16 @@ fn mutate_dna(dna: Dna) -> Dna {
 // Either increments or decrements base by 1
 fn mutate_base(base: i32) -> i32 {
     if rand::random() {
-        return zero_floor(base + 1)       
+        return floor(base + 1);
     }
-    return zero_floor(base - 1);
+    return floor(base - 1);
 }
 
-// Ensures that we don't get a negative number
-fn zero_floor(base: i32) -> i32 {
-    if base < 0 {
-        return 0;
+// Ensures that we don't get a number less than 1
+// A parameter of zero might end up with current day calculations
+fn floor(base: i32) -> i32 {
+    if base < 1 {
+        return 1;
     }
     return base;
 }
