@@ -4,13 +4,13 @@
 //!
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-
 extern crate chrono;
+extern crate env_logger;
 extern crate postgres;
 extern crate rand;
-extern crate uuid;
 extern crate threadpool;
+extern crate uuid;
+extern crate crossbeam_channel;
 
 mod chromosome;
 mod config;
@@ -30,9 +30,11 @@ use schemas::Quote;
 use schemas::Return;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::sync_channel;
+use std::thread;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
-use threadpool::ThreadPool;
 
 // use writer;
 
@@ -51,47 +53,40 @@ fn main() {
     // repo::init::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
     for i in 1..4 {
-        info!("Running generation: {}", i);
+        warn!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
             chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
-            panic!("no mas");
             chromosomes = darwin::evolve(ranked_chromosomes, i);
         }
-        // writer::write_chromosomes::call(&chromosomes);
-        // repo::copy_chromosomes::call();
-        // let local = chromosomes.clone();
-        let pool = ThreadPool::new(8);
-        let mut updated_chromosomes: Vec<Chromosome> = vec![];
+        warn!("{} Chromosomes", &chromosomes.len());
+        let c_len = *&chromosomes.len();
+        let (c_tx, c_rx) = channel();
+        let (throttle_tx, throttle_rx) = crossbeam_channel::bounded(8);
         for chromosome in chromosomes {
-            // println!("processing chromosome: {:?}", chromosome);
             let q_clone = quotes_repo.clone();
             let r_clone = returns.clone();
-            let mut updated_chromosome = chromosome.clone();
-            pool.execute(move || {
-                updated_chromosome = process_chromosome(&chromosome, q_clone, r_clone);
+            let tx_n = c_tx.clone();
+            let t_rx = throttle_rx.clone();
+            throttle_tx.send(1);
+            thread::spawn(move || {
+                tx_n.send(process_chromosome(&chromosome, q_clone, r_clone)).unwrap();
+                t_rx.recv().unwrap();
             });
-            // updated_chromosomes.push(updated_chromosome.clone());
         }
-
-        pool.join();
-
-        updated_chromosomes.sort_by_key(|c| c.w_kelly as i32);
-        for i in 0..updated_chromosomes.len() {
-            let chromosome = &mut updated_chromosomes[i];
-            chromosome.rank = i as i32 + 1;
-        }
-        ranked_chromosomes = updated_chromosomes;
+        let mut updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
+        ranked_chromosomes = rank_chromosomes(&mut updated_chromosomes);
         writer::write_chromosomes::call(&ranked_chromosomes);
     }
 }
+
 
 /// Initializes hashmap for quotes
 fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
     let mut repo = HashMap::new();
     for ticker in get_tickers::call() {
-        println!("{:?}", ticker);
+        debug!("{:?}", ticker);
         let quotes = get_quotes_by_symbol::call(&ticker.symbol);
         repo.insert(ticker.symbol, quotes);
     }
@@ -108,7 +103,11 @@ fn init_returns() -> BTreeMap<String, Return> {
     repo
 }
 
-fn process_chromosome(chromosome: &Chromosome, quotes_repo: HashMap<String, Vec<Quote>>, returns: BTreeMap<String, Return>) -> Chromosome{
+fn process_chromosome(
+    chromosome: &Chromosome,
+    quotes_repo: HashMap<String, Vec<Quote>>,
+    returns: BTreeMap<String, Return>,
+) -> Chromosome {
     let mut trade_signals = generate_signals(&chromosome, quotes_repo);
     writer::write_signals::call(&trade_signals, &chromosome);
     merge_returns(&mut trade_signals, &returns);
@@ -218,7 +217,6 @@ fn kelly(mean: f32, variance: f32) -> f32 {
 }
 
 /// Generate strategy signals
-///
 fn generate_strategy_signals(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
@@ -231,7 +229,10 @@ fn generate_strategy_signals(
     };
 }
 
-fn update_chromosome(chromosome: Chromosome, trade_signals: BTreeMap<String, TradeSignal>) -> Chromosome {
+fn update_chromosome(
+    chromosome: Chromosome,
+    trade_signals: BTreeMap<String, TradeSignal>,
+) -> Chromosome {
     let mut updated_chromosome = chromosome.clone();
     let signaled_trades: Vec<TradeSignal> = trade_signals
         .into_iter()
@@ -254,13 +255,14 @@ fn update_chromosome(chromosome: Chromosome, trade_signals: BTreeMap<String, Tra
     updated_chromosome
 }
 
-// fn upload_signals() {
-
-// }
-
-// fn upload_chromosomes() {
-
-// }
+fn rank_chromosomes(updated_chromosomes: &mut Vec<Chromosome>) -> Vec<Chromosome> {
+        updated_chromosomes.sort_by_key(|c| c.w_kelly as i32);
+        for i in 0..updated_chromosomes.len() {
+            let chromosome = &mut updated_chromosomes[i];
+            chromosome.rank = i as i32 + 1;
+        }
+        updated_chromosomes.clone()
+}
 
 #[test]
 fn test_for_loop() {

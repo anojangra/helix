@@ -1,16 +1,18 @@
-use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Write;
-use trade_signal::TradeSignal;
-use writer;
 use chromosome::Chromosome;
 use repo;
+use std::collections::BTreeMap;
 use std::fs;
+use std::fs::File;
+use std::io::{self, Write};
+use trade_signal::TradeSignal;
+use writer;
 
 /// Write signals to disk
 ///
 pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
-    info!("writing id: {} to disk", chromosome.id);
+    debug!("writing id: {} to disk", chromosome.id);
+    print!(".");
+    io::stdout().flush().unwrap();
     let filename = format!("/tmp/{}.txt", chromosome.id);
     let mut f = File::create(&filename).expect("Unable to create file");
     for signal in signals {
@@ -32,4 +34,3 @@ pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     repo::trade_signals::copy(&filename);
     fs::remove_file(filename).unwrap();
 }
-
