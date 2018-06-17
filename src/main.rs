@@ -90,6 +90,7 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
 
 /// Initializes Btreemap for returns
 fn init_returns() -> BTreeMap<String, Return> {
+    debug!("Initializing returns");
     let mut repo: BTreeMap<String, Return> = BTreeMap::new();
     for ret in repo::get_returns::call(config::TARGET_TICKER.to_string()) {
         let ts = ret.ts.to_string();
@@ -222,6 +223,7 @@ fn generate_strategy_signals(
         "llv" => strategies::lowest_low_value::call(strategy, trade_signals, quotes),
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
         "conupdays" => strategies::con_up_days::call(strategy, trade_signals, quotes),
+        "condowndays" => strategies::con_down_days::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }

@@ -11,18 +11,18 @@ pub fn call(
 ) {
     let windows = strategies::window(quotes, strategy.param as usize);
     for w in windows {
-        let signal = con_up_days(&w, strategy.param);
+        let signal = con_down_days(&w, strategy.param);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn con_up_days(window: &strategies::Window, param: i32) -> i32 {
+fn con_down_days(window: &strategies::Window, param: i32) -> i32 {
     let mut up_days: Vec<i32> = vec![];
     let quotes = strategies::flatten_window(window);
     for i in 1..quotes.len() {
         let current_quote = &quotes[i];
         let previous_quote = &quotes[i - 1];
-        if current_quote.close > previous_quote.close {
+        if current_quote.close < previous_quote.close {
             up_days.push(1);
         } else {
             up_days.push(0);
@@ -37,7 +37,7 @@ fn con_up_days(window: &strategies::Window, param: i32) -> i32 {
 }
 
 #[test]
-fn test_conupdays() {
+fn test_condowndays() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -63,7 +63,7 @@ fn test_conupdays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 101.00,
+            close: 98.00,
             volume: 999.75,
         },
         Quote {
@@ -72,7 +72,7 @@ fn test_conupdays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 102.00,
+            close: 97.00,
             volume: 1000.50,
         },
         Quote {
@@ -81,7 +81,7 @@ fn test_conupdays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 103.00,
+            close: 96.00,
             volume: 1000.49,
         },
         Quote {
@@ -97,10 +97,10 @@ fn test_conupdays() {
     let windows = strategies::window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
-    let signal = con_up_days(&first_window, 3);
+    let signal = con_down_days(&first_window, 3);
     assert_eq!(0, signal);
     let second_window = &windows[1];
     // println!("second_window: {:?}", first_window);
-    let signal = con_up_days(&second_window, 3);
+    let signal = con_down_days(&second_window, 3);
     assert_eq!(1, signal);
 }

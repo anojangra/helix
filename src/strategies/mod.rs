@@ -5,6 +5,7 @@ use trade_signal;
 use trade_signal::TradeSignal;
 use uuid::Uuid;
 
+pub mod con_down_days;
 pub mod con_up_days;
 pub mod highest_high_value;
 pub mod lowest_low_value;
@@ -336,5 +337,4 @@ fn test_flatten_window() {
     assert_eq!(expected[1].ts, f_window[1].ts);
     assert_eq!(expected[2].ts, f_window[2].ts);
     assert_eq!(expected[3].ts, f_window[3].ts);
-
 }

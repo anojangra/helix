@@ -1,7 +1,7 @@
 pub static STATEMENTS: [&str; 2] = ["<stmnt>", "<stmnt>::<code>"];
 
-pub static TICKERS: [&str; 13] = [ 
-    "coinbaseUSD",
+pub static TICKERS: [&str; 13] = [
+	"coinbaseUSD",
 	"zaifJPY",
 	"bitstampUSD",
 	"coincheckJPY",
@@ -13,14 +13,14 @@ pub static TICKERS: [&str; 13] = [
 	"bitfinexUSD",
 	"fiscoJPY",
 	"krakenEUR",
-	"krakenUSD"
+	"krakenUSD",
 ];
 
-
-pub static STRATEGIES: [&str; 3] = [
+pub static STRATEGIES: [&str; 4] = [
 	"hhv:<ticker>:<param>",
 	"llv:<ticker>:<param>",
 	"conupdays:<ticker>:<param>",
+	"condowndays:<ticker>:<param>",
 ];
 
 // pub static STRATEGIES: [&str; 6] = [
