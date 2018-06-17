@@ -19,7 +19,6 @@ pub fn call(
 }
 
 // Calculate lowest low in window
-//
 fn lowest_low_value(window: &Window) -> i32 {
     let low_values: Vec<f32> = window.window.iter().map(|quote| quote.low).collect();
     let lowest_value = low_values.iter().fold(0_f32, |acc, x| acc.min(*x));
