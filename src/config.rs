@@ -16,22 +16,14 @@ pub static TICKERS: [&str; 13] = [
 	"krakenUSD",
 ];
 
-pub static STRATEGIES: [&str; 5] = [
+pub static STRATEGIES: [&str; 6] = [
 	"hhv:<ticker>:<param>",
 	"llv:<ticker>:<param>",
 	"conupdays:<ticker>:<param>",
 	"condowndays:<ticker>:<param>",
 	"gapup:<ticker>:<param>",
+	"gapdown:<ticker>:<param>",
 ];
-
-// pub static STRATEGIES: [&str; 6] = [
-// 	"hhv:<ticker>:<param>",
-// 	"llv:<ticker>:<param>",
-// 	"conupdays:<ticker>:<param>",
-// 	"condowndays:<ticker>:<param>",
-// 	"gapup:<ticker>:<param>",
-// 	"gapdown:<ticker>:<param>",
-// ];
 
 pub static TARGET_TICKER: &str = "krakenUSD";
 
