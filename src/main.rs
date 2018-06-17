@@ -262,10 +262,3 @@ fn rank_chromosomes(updated_chromosomes: &mut Vec<Chromosome>) -> Vec<Chromosome
     }
     updated_chromosomes.clone()
 }
-
-#[test]
-fn test_for_loop() {
-    for i in 1..4 {
-        println!("{}", i)
-    }
-}
