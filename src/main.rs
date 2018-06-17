@@ -221,6 +221,7 @@ fn generate_strategy_signals(
     match strategy.code.as_ref() {
         "llv" => strategies::lowest_low_value::call(strategy, trade_signals, quotes),
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
+        "conupdays" => strategies::con_up_days::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }

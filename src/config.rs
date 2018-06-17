@@ -17,9 +17,10 @@ pub static TICKERS: [&str; 13] = [
 ];
 
 
-pub static STRATEGIES: [&str; 2] = [
+pub static STRATEGIES: [&str; 3] = [
 	"hhv:<ticker>:<param>",
 	"llv:<ticker>:<param>",
+	"conupdays:<ticker>:<param>",
 ];
 
 // pub static STRATEGIES: [&str; 6] = [

@@ -15,7 +15,7 @@ pub struct Strategy {
     pub strategy: String,
     pub code: String,
     pub ticker: String,
-    pub param: i64,
+    pub param: i32,
     pub target_ticker: String,
     pub generation: i32,
 }
@@ -63,12 +63,13 @@ pub fn expand_strategies(chromosome: Chromosome) -> Vec<Strategy> {
 pub fn expand_strategy(chromosome: Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
+    debug!("{:?}", strategy_name);
     Strategy {
         chromosome_id: chromosome.id,
         strategy: strategy_name,
         code: v[0].to_string(),
         ticker: v[1].to_string(),
-        param: v[2].parse::<i64>().unwrap(),
+        param: v[2].parse::<i32>().unwrap(),
         target_ticker: chromosome.target_ticker.clone(),
         generation: chromosome.generation,
     }
@@ -293,7 +294,6 @@ fn test_flatten_window() {
         },
     };
     let f_window = flatten_window(&w);
-    println!("f_window: {:?}", f_window);
     let expected = vec![
         Quote {
             ticker: "AAPL".to_string(),
