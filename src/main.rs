@@ -224,6 +224,7 @@ fn generate_strategy_signals(
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
         "conupdays" => strategies::con_up_days::call(strategy, trade_signals, quotes),
         "condowndays" => strategies::con_down_days::call(strategy, trade_signals, quotes),
+        "gapup" => strategies::con_down_days::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }

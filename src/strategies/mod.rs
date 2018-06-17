@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 pub mod con_down_days;
 pub mod con_up_days;
+pub mod gap_down_days;
 pub mod highest_high_value;
 pub mod lowest_low_value;
 
