@@ -26,7 +26,6 @@ pub fn generate(len: i32) -> Dna {
 #[test]
 fn test_generate() {
     let dna = generate(12);
-    println!("{:?}", dna);
     assert_eq!(12, dna.len());
 }
 

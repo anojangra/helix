@@ -5,6 +5,7 @@ use trade_signal;
 use trade_signal::TradeSignal;
 use uuid::Uuid;
 
+pub mod con_up_days;
 pub mod highest_high_value;
 pub mod lowest_low_value;
 
@@ -22,6 +23,12 @@ pub struct Strategy {
 #[derive(Debug, Clone)]
 pub struct Window {
     pub window: Vec<Quote>,
+    pub current_quote: Quote,
+}
+
+#[derive(Debug, Clone)]
+pub struct Lag {
+    pub lag_quote: Quote,
     pub current_quote: Quote,
 }
 
@@ -72,7 +79,7 @@ fn insert_signal(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     window: &Window,
     strategy: &Strategy,
-    signal: &i32
+    signal: &i32,
 ) {
     let ts_string = window.current_quote.ts.to_string();
     let trade_signal = match trade_signals.get(&ts_string) {
@@ -103,6 +110,8 @@ fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) 
 
 /// Cast windows from list of quotes
 ///
+/// A window is x quotes prior to the current quote
+///
 /// returns tuple: (array of windows, current_quote)
 ///
 fn window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
@@ -117,6 +126,28 @@ fn window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
         windows.push(new_window);
     }
     windows
+}
+
+// Takes the lagged window of quotes and the current window and creates a
+// a single vector of quote
+fn flatten_window(window: &Window) -> Vec<Quote> {
+    let mut w = window.window.clone();
+    w.push(window.current_quote.clone());
+    w
+}
+
+fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
+    let mut lag: Vec<Lag> = vec![];
+    for n in periods..quotes.len() {
+        let lag_n = n - periods;
+        let lag_quote = &quotes[lag_n];
+        let new_lag = Lag {
+            lag_quote: lag_quote.clone(),
+            current_quote: quotes[n].clone(),
+        };
+        lag.push(new_lag);
+    }
+    lag
 }
 
 #[cfg(test)]
@@ -169,7 +200,7 @@ fn test_window() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528746804.0,
+            ts: 1528746805.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -178,7 +209,7 @@ fn test_window() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528747804.0,
+            ts: 1528747806.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -187,7 +218,7 @@ fn test_window() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528748804.0,
+            ts: 1528748807.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -196,7 +227,7 @@ fn test_window() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528749804.0,
+            ts: 1528749808.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -205,7 +236,7 @@ fn test_window() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528750804.0,
+            ts: 1528750809.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -214,6 +245,96 @@ fn test_window() {
         },
     ];
     let windows = window(&test_vec, 3);
-    let first_quote = &windows[0].window[0];
-    assert_eq!(first_quote.ticker, "AAPL".to_string());
+    let first_window = &windows[0];
+    assert_eq!(first_window.window[0].ts, 1528745804.0);
+    assert_eq!(first_window.current_quote.ts, 1528748807.0);
+}
+
+#[test]
+fn test_flatten_window() {
+    let w = Window {
+        window: vec![
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528745804.0,
+                open: 100.0,
+                high: 105.0,
+                low: 99.0,
+                close: 99.0,
+                volume: 1000.2,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528746805.0,
+                open: 100.0,
+                high: 105.0,
+                low: 99.0,
+                close: 99.0,
+                volume: 1000.8,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528747806.0,
+                open: 100.0,
+                high: 105.0,
+                low: 99.0,
+                close: 99.0,
+                volume: 999.75,
+            },
+        ],
+        current_quote: Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528748807.0,
+            open: 100.0,
+            high: 105.0,
+            low: 99.0,
+            close: 99.0,
+            volume: 1000.5,
+        },
+    };
+    let f_window = flatten_window(&w);
+    println!("f_window: {:?}", f_window);
+    let expected = vec![
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528745804.0,
+            open: 100.0,
+            high: 105.0,
+            low: 99.0,
+            close: 99.0,
+            volume: 1000.2,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528746805.0,
+            open: 100.0,
+            high: 105.0,
+            low: 99.0,
+            close: 99.0,
+            volume: 1000.8,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528747806.0,
+            open: 100.0,
+            high: 105.0,
+            low: 99.0,
+            close: 99.0,
+            volume: 999.75,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528748807.0,
+            open: 100.0,
+            high: 105.0,
+            low: 99.0,
+            close: 99.0,
+            volume: 1000.5,
+        },
+    ];
+    assert_eq!(expected[0].ts, f_window[0].ts);
+    assert_eq!(expected[1].ts, f_window[1].ts);
+    assert_eq!(expected[2].ts, f_window[2].ts);
+    assert_eq!(expected[3].ts, f_window[3].ts);
+
 }

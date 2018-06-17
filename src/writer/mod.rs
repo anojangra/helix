@@ -38,11 +38,11 @@ fn fmt_vec_dna(dna: Vec<i32>) -> String {
 #[test]
 fn test_fmt_vec_string() {
     let t = vec!["A".to_string(), "B".to_string(), "C".to_string()];
-    assert_eq!("\"{A,B,C}\"", fmt_vec_string(t))
+    assert_eq!("{A,B,C}", fmt_vec_string(t))
 }
 
 #[test]
 fn test_fmt_vec_dna() {
     let t: Vec<i32> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    assert_eq!("\"{1,2,3,4,5,6,7,8,9,10,11,12}\"", fmt_vec_dna(t))
+    assert_eq!("{1,2,3,4,5,6,7,8,9,10,11,12}", fmt_vec_dna(t))
 }
