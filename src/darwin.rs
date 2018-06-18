@@ -1,6 +1,6 @@
 use chromosome::Chromosome;
+use chromosome;
 use config;
-use controls;
 use dna::Dna;
 use rand;
 use rand::prelude::*;
@@ -10,7 +10,7 @@ pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chrom
     let fittest_chromosomes = &ranked_chromosomes[start..];
     let pool = generate_pool(fittest_chromosomes);
     let dnas = mate(&pool);
-    controls::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER)
+    chromosome::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER)
 }
 
 fn generate_pool(ranked_chromosomes: &[Chromosome]) -> Vec<Dna> {

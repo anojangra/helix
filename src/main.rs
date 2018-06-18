@@ -14,7 +14,6 @@ extern crate uuid;
 
 mod chromosome;
 mod config;
-mod controls;
 mod darwin;
 mod dna;
 mod repo;
@@ -50,7 +49,7 @@ fn main() {
         warn!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
-            chromosomes = controls::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
+            chromosomes = chromosome::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
             chromosomes = darwin::evolve(ranked_chromosomes, i);
         }
@@ -224,7 +223,8 @@ fn generate_strategy_signals(
         "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
         "conupdays" => strategies::con_up_days::call(strategy, trade_signals, quotes),
         "condowndays" => strategies::con_down_days::call(strategy, trade_signals, quotes),
-        "gapup" => strategies::con_down_days::call(strategy, trade_signals, quotes),
+        "gapup" => strategies::gap_up_days::call(strategy, trade_signals, quotes),
+        "gapdown" => strategies::gap_down_days::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }
@@ -259,9 +259,13 @@ fn update_chromosome(
 // Rank chromosomes by w_kelly
 fn rank_chromosomes(updated_chromosomes: &mut Vec<Chromosome>) -> Vec<Chromosome> {
     updated_chromosomes.sort_by_key(|c| c.w_kelly as i32);
-    for i in 0..updated_chromosomes.len() {
-        let chromosome = &mut updated_chromosomes[i];
-        chromosome.rank = i as i32 + 1;
+    let end_idx = updated_chromosomes.len() as i32;
+    let fittest = config::FITTEST as i32;
+    let start_idx = end_idx - fittest;
+    for i in start_idx..end_idx {
+        let chromosome = &mut updated_chromosomes[i as usize];
+        let negative_rank = (end_idx - i - fittest - 1) as i32;
+        chromosome.rank = negative_rank.abs() as i32;
     }
     updated_chromosomes.clone()
 }

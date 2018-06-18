@@ -2,12 +2,15 @@ use chromosome::Chromosome;
 use repo;
 use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{self, Write};
 use writer;
 
 /// Write chromosomes to disk
 ///
 pub fn call(chromosomes: &Vec<Chromosome>) {
+    debug!("writing chromsosome to disk");
+    print!("#\n");
+    io::stdout().flush().unwrap();
     let mut f = File::create("/tmp/chromosomes.txt").expect("Unable to create file");
     for chromosome in chromosomes {
         let c = chromosome;
