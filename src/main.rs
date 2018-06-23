@@ -67,8 +67,8 @@ fn main() {
                 t_rx.recv().unwrap();
             });
         }
-        let mut updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
-        ranked_chromosomes = rank_chromosomes(&mut updated_chromosomes);
+        let updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
+        ranked_chromosomes = rank_chromosomes(updated_chromosomes);
         writer::write_chromosomes::call(&ranked_chromosomes);
     }
     info!("So long and thanks for all the fish!");
@@ -256,15 +256,19 @@ fn update_chromosome(
 }
 
 // Rank chromosomes by w_kelly
-fn rank_chromosomes(updated_chromosomes: &mut Vec<Chromosome>) -> Vec<Chromosome> {
-    updated_chromosomes.sort_by_key(|c| c.w_kelly as i32);
-    let end_idx = updated_chromosomes.len() as i32;
+fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
+    let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
+        .into_iter()
+        .filter(|c| c.num_of_trades > 30)
+        .collect();
+    filtered_chromosomes.sort_by_key(|c| c.w_kelly as i32);
+    let end_idx = filtered_chromosomes.len() as i32;
     let fittest = config::FITTEST as i32;
     let start_idx = end_idx - fittest;
     for i in start_idx..end_idx {
-        let chromosome = &mut updated_chromosomes[i as usize];
+        let chromosome = &mut filtered_chromosomes[i as usize];
         let negative_rank = (end_idx - i - fittest - 1) as i32;
         chromosome.rank = negative_rank.abs() as i32;
     }
-    updated_chromosomes.clone()
+    filtered_chromosomes.clone()
 }

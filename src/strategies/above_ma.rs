@@ -4,9 +4,9 @@ use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
 
-/// Below Moving Average
-/// 
-/// 
+/// Above Moving Average
+///
+///
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
