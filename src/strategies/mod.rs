@@ -14,6 +14,17 @@ pub mod lowest_low_value;
 pub mod above_ma;
 pub mod below_ma;
 
+/// consecutive up volume
+/// consecutive down volume
+/// cross above ma
+/// cross below ma
+/// above 2std A 
+/// above 1std < 2std B
+/// 0 < x < 1std
+/// -1std < x < 0 
+/// -2strd < x < -1std D
+/// x < -2std F
+
 #[derive(Debug, Clone)]
 pub struct Strategy {
     pub chromosome_id: Uuid,
@@ -156,9 +167,20 @@ fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
     lag
 }
 
+/// Calculates average from vector of f32s
 pub fn average(values: Vec<f32>) -> f32 {
     let sum: f32 = values.iter().sum();
     return sum / values.len() as f32;
+}
+
+/// Calculates standard deviation from vector fo f32s
+pub fn std_dev(values: Vec<f32>) -> f32 {
+    let mean = average(values.clone());
+    let diffs: Vec<f32> = values.iter().map(|x| x - mean).collect();
+    let abs_diffs: Vec<f32> = diffs.iter().map(|x| x.abs()).collect();
+    let square_diffs: Vec<f32> = abs_diffs.iter().map(|x| x.powf(2 as f32)).collect();
+    let avg_diff = average(square_diffs);
+    avg_diff.sqrt()
 }
 
 #[cfg(test)]
@@ -346,4 +368,12 @@ fn test_flatten_window() {
     assert_eq!(expected[1].ts, f_window[1].ts);
     assert_eq!(expected[2].ts, f_window[2].ts);
     assert_eq!(expected[3].ts, f_window[3].ts);
+}
+
+
+#[test]
+fn test_std_dev() {
+    let test_vec: Vec<f32> = vec![6.0, 2.0, 3.0, 1.0];
+    let result = std_dev(test_vec);
+    assert_eq!(result, 1.8708287 as f32);
 }
