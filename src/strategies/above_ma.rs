@@ -4,7 +4,7 @@ use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
 
-/// Consecutive down days
+/// Below Moving Average
 /// 
 /// 
 pub fn call(
@@ -14,33 +14,22 @@ pub fn call(
 ) {
     let windows = strategies::window(quotes, strategy.param as usize);
     for w in windows {
-        let signal = con_down_days(&w, strategy.param);
+        let signal = above_ma(&w);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn con_down_days(window: &strategies::Window, param: i32) -> i32 {
-    let mut up_days: Vec<i32> = vec![];
-    let quotes = strategies::flatten_window(window);
-    for i in 1..quotes.len() {
-        let current_quote = &quotes[i];
-        let previous_quote = &quotes[i - 1];
-        if current_quote.close < previous_quote.close {
-            up_days.push(1);
-        } else {
-            up_days.push(0);
-        }
-    }
-    let sum_signals: i32 = up_days.iter().sum();
-    if sum_signals == param {
+fn above_ma(window: &strategies::Window) -> i32 {
+    let closes: Vec<f32> = window.window.iter().map(|quote| quote.close).collect();
+    let ma = strategies::average(closes);
+    if window.current_quote.close > ma {
         return 1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 #[test]
-fn test_condowndays() {
+fn test_above_ma() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -66,7 +55,7 @@ fn test_condowndays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 98.00,
+            close: 101.00,
             volume: 999.75,
         },
         Quote {
@@ -75,7 +64,7 @@ fn test_condowndays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 97.00,
+            close: 102.00,
             volume: 1000.50,
         },
         Quote {
@@ -84,7 +73,7 @@ fn test_condowndays() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 96.00,
+            close: 100.00,
             volume: 1000.49,
         },
         Quote {
@@ -100,10 +89,10 @@ fn test_condowndays() {
     let windows = strategies::window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
-    let signal = con_down_days(&first_window, 3);
-    assert_eq!(0, signal);
+    let signal = above_ma(&first_window);
+    assert_eq!(1, signal);
     let second_window = &windows[1];
     // println!("second_window: {:?}", first_window);
-    let signal = con_down_days(&second_window, 3);
-    assert_eq!(1, signal);
+    let signal = above_ma(&second_window);
+    assert_eq!(0, signal);
 }

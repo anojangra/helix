@@ -9,7 +9,7 @@ pub fn init_trade_signals() {
             CREATE TABLE trade_signals (
                 chromosome_id uuid
             ,   ts integer not null
-            ,   stratgies text array
+            ,   strategies text array
             ,   signals integer array
             ,   target_ticker text
             ,   hard_signal integer

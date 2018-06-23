@@ -4,6 +4,12 @@ use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
 
+/// Gap up days
+/// 
+/// Calculates gap up days
+/// A gap up is identified when the Open is higher than the previous close
+/// The signal returns 1 when the number of consecutive up days equals param
+/// 
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
@@ -28,8 +34,8 @@ fn gap_up_days(window: &strategies::Window, param: i32) -> i32 {
             gap_up_days.push(0);
         }
     }
-    let agg_up_days: i32 = gap_up_days.iter().sum();
-    if agg_up_days == param {
+    let sum_signals: i32 = gap_up_days.iter().sum();
+    if sum_signals == param {
         return 1;
     } else {
         return 0;

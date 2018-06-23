@@ -34,8 +34,6 @@ use std::thread;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
 
-// use writer;
-
 fn main() {
     env_logger::init();
     info!("Hello, world!");
@@ -105,9 +103,9 @@ fn process_chromosome(
     returns: BTreeMap<String, Return>,
 ) -> Chromosome {
     let mut trade_signals = generate_signals(&chromosome, quotes_repo);
-    writer::write_signals::call(&trade_signals, &chromosome);
     merge_returns(&mut trade_signals, &returns);
     calc_pnl(&mut trade_signals, chromosome.clone());
+    writer::write_signals::call(&trade_signals, &chromosome);
     update_chromosome(chromosome.clone(), trade_signals)
 }
 
@@ -174,7 +172,6 @@ fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: Chrom
             s.hard_signal = 1;
             s.pnl = s.ret * 1.0;
         }
-
         trade_signals.insert(trade_signal.0.clone(), s);
     }
 }
@@ -225,6 +222,8 @@ fn generate_strategy_signals(
         "condowndays" => strategies::con_down_days::call(strategy, trade_signals, quotes),
         "gapup" => strategies::gap_up_days::call(strategy, trade_signals, quotes),
         "gapdown" => strategies::gap_down_days::call(strategy, trade_signals, quotes),
+        "belowma" => strategies::below_ma::call(strategy, trade_signals, quotes),
+        "abovema" => strategies::above_ma::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }

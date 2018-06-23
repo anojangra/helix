@@ -11,6 +11,8 @@ pub mod gap_up_days;
 pub mod gap_down_days;
 pub mod highest_high_value;
 pub mod lowest_low_value;
+pub mod above_ma;
+pub mod below_ma;
 
 #[derive(Debug, Clone)]
 pub struct Strategy {
@@ -152,6 +154,11 @@ fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
         lag.push(new_lag);
     }
     lag
+}
+
+pub fn average(values: Vec<f32>) -> f32 {
+    let sum: f32 = values.iter().sum();
+    return sum / values.len() as f32;
 }
 
 #[cfg(test)]

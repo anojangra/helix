@@ -9,13 +9,11 @@ use writer;
 
 /// Write signals to disk
 pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
-    debug!("writing id: {} to disk", chromosome.id);
-    print!(".");
-    io::stdout().flush().unwrap();
-    let filename = format!("/tmp/{}.txt", chromosome.id);
-    let mut f = File::create(&filename).expect("Unable to create file");
+    log_call(chromosome);
+    let (filename, mut f) = create_file(chromosome);
     for signal in signals {
         let s = signal.1;
+        debug!("writing signal: {:?} to disk", &s);
         write!(
             f,
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
@@ -32,4 +30,16 @@ pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     }
     repo::trade_signals::copy(&filename);
     fs::remove_file(filename).unwrap();
+}
+
+fn log_call(chromosome: &Chromosome) {
+    debug!("writing id: {} to disk", chromosome.id);
+    print!(".");
+    io::stdout().flush().unwrap();
+}
+
+fn create_file(chromosome: &Chromosome) -> (String, File) {
+    let filename = format!("/tmp/{}.txt", chromosome.id);
+    let file = File::create(&filename).expect("Unable to create file");
+    return (filename, file);
 }

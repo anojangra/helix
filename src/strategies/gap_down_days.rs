@@ -28,8 +28,8 @@ fn gap_down_days(window: &strategies::Window, param: i32) -> i32 {
             gap_down_days.push(0);
         }
     }
-    let agg: i32 = gap_down_days.iter().sum();
-    if agg == param {
+    let sum_signals: i32 = gap_down_days.iter().sum();
+    if sum_signals == param {
         return 1;
     } else {
         return 0;

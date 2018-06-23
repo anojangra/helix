@@ -4,6 +4,9 @@ use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
 
+/// Consecutive up days
+/// 
+/// Up day is when close is higher than the previous close. 
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
@@ -28,8 +31,8 @@ fn con_up_days(window: &strategies::Window, param: i32) -> i32 {
             up_days.push(0);
         }
     }
-    let agg_up_days: i32 = up_days.iter().sum();
-    if agg_up_days == param {
+    let sum_signals: i32 = up_days.iter().sum();
+    if sum_signals == param {
         return 1;
     } else {
         return 0;
