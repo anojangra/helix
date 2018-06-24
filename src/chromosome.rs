@@ -92,7 +92,7 @@ fn test_decode_dna() {
     let dna = vec![241, 252, 253, 8, 13, 118, 184, 1, 225, 54, 141, 95];
     let chromosome = decode_dna("<code>".to_string(), &dna);
     assert_eq!(
-        "hhv:btceUSD:8::gapup:bitstampUSD:1::hhv:krakenEUR:95",
+        "hhv:btceUSD:8::stdevd:bitstampUSD:1::abovema:krakenEUR:95",
         chromosome
     );
 }

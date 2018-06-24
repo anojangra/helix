@@ -22,11 +22,6 @@ pub mod stddev_f;
 /// consecutive down volume
 /// cross above ma
 /// cross below ma
-/// above 2std A
-/// above 1std < 2std B
-/// 0 < x < 1std
-/// -2strd < x < -1std D
-/// x < -2std F
 
 #[derive(Debug, Clone)]
 pub struct Strategy {
