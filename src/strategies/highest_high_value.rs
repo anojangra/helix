@@ -89,7 +89,7 @@ fn test_hhv() {
             volume: 1000.79,
         },
     ];
-    let windows = window(&test_vec, 3);
+    let windows = strategies::make_window(&test_vec, 3);
     let first_window = &windows[0];
     let signal = highest_high_value(&first_window);
     assert_eq!(1, signal);

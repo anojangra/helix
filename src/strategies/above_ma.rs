@@ -86,7 +86,7 @@ fn test_above_ma() {
             volume: 1000.79,
         },
     ];
-    let windows = strategies::window(&test_vec, 3);
+    let windows = strategies::make_window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = above_ma(&first_window);

@@ -23,6 +23,8 @@ pub fn call(
 fn generator(window: &Window) -> i32 {
     let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
     let std_dev = strategies::std_dev(close_diffs);
+    let current_diff = window.current_diff();
+    println!("current_diff: {}", current_diff);
     if window.current_quote.close > std_dev {
         return 1;
     }
@@ -87,7 +89,7 @@ fn test_std_dev() {
             volume: 1000.79,
         },
     ];
-    let windows = strategies::window(&test_vec, 3);
+    let windows = strategies::make_window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = generator(&first_window);

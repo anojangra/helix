@@ -86,7 +86,7 @@ fn test_llv() {
             volume: 1000.79,
         },
     ];
-    let windows = window(&test_vec, 3);
+    let windows = make_window(&test_vec, 3);
     let first_window = &windows[0];
     let signal = lowest_low_value(&first_window);
     assert_eq!(0, signal);

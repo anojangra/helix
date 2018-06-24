@@ -279,7 +279,7 @@ fn test_window() {
             volume: 1000.79,
         },
     ];
-    let windows = window(&test_vec, 3);
+    let windows = make_window(&test_vec, 3);
     let first_window = &windows[0];
     assert_eq!(first_window.window[0].ts, 1528745804.0);
     assert_eq!(first_window.current_quote.ts, 1528748807.0);

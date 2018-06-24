@@ -98,7 +98,7 @@ fn test_conupdays() {
             volume: 1000.79,
         },
     ];
-    let windows = strategies::window(&test_vec, 3);
+    let windows = strategies::make_window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = con_up_days(&first_window, 3);

@@ -101,7 +101,7 @@ fn test_gapupdays() {
             volume: 1000.79,
         },
     ];
-    let windows = strategies::window(&test_vec, 3);
+    let windows = strategies::make_window(&test_vec, 3);
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = gap_up_days(&first_window, 3);
