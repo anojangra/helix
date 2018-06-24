@@ -5,7 +5,7 @@ use strategies::Strategy;
 use trade_signal::TradeSignal;
 use window::Window;
 
-/// Above Moving Average
+/// Standard deviation above 1 sigma and less than 2 sigmas
 ///
 ///
 pub fn call(
@@ -24,14 +24,14 @@ fn generator(window: &Window) -> i32 {
     let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
     let std_dev = strategies::std_dev(close_diffs);
     let current_diff = window.current_diff();
-    if current_diff >= (std_dev * 2.0) {
+    if current_diff < (std_dev * 2.0) && current_diff >= std_dev {
         return 1;
     }
     return 0;
 }
 
 #[test]
-fn test_std_dev_a() {
+fn test_std_dev_b() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -75,7 +75,7 @@ fn test_std_dev_a() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 103.00,
+            close: 104.00,
             volume: 1000.49,
         },
         Quote {
@@ -84,21 +84,24 @@ fn test_std_dev_a() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 99.00,
+            close: 104.25,
             volume: 1000.79,
         },
     ];
     let windows = strategies::make_window(&test_vec, 3);
     
+    // Test x = 1 sigma
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = generator(&first_window);
-    assert_eq!(0, signal);
+    assert_eq!(1, signal);
     
+    // Test x > 2 sigma
     let second_window = &windows[1];
     // println!("second_window: {:?}", second_window);
     let signal = generator(&second_window);
-    assert_eq!(1, signal);
+    assert_eq!(0, signal);
+
 
     let third_window = &windows[2];
     // println!("third window: {:?}", third_window);

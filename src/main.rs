@@ -225,6 +225,10 @@ fn generate_strategy_signals(
         "gapdown" => strategies::gap_down_days::call(strategy, trade_signals, quotes),
         "belowma" => strategies::below_ma::call(strategy, trade_signals, quotes),
         "abovema" => strategies::above_ma::call(strategy, trade_signals, quotes),
+        "stdeva" => strategies::stddev_a::call(strategy, trade_signals, quotes),
+        "stdevb" => strategies::stddev_b::call(strategy, trade_signals, quotes),
+        "stdevd" => strategies::stddev_d::call(strategy, trade_signals, quotes),
+        "stdevf" => strategies::stddev_f::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
 }

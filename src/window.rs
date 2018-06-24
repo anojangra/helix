@@ -8,7 +8,7 @@ pub struct Window {
 
 impl Window {
     pub fn current_diff(&self) -> f32 {
-        let end_idx = self.window.len();
+        let end_idx = self.window.len() - 1;
         let end_window_quote = &self.window[end_idx.clone()];
         self.current_quote.close - end_window_quote.close
     }

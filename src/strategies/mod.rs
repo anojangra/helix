@@ -15,7 +15,9 @@ pub mod gap_up_days;
 pub mod highest_high_value;
 pub mod lowest_low_value;
 pub mod stddev_a;
-
+pub mod stddev_b;
+pub mod stddev_d;
+pub mod stddev_f;
 /// consecutive up volume
 /// consecutive down volume
 /// cross above ma
@@ -23,7 +25,6 @@ pub mod stddev_a;
 /// above 2std A
 /// above 1std < 2std B
 /// 0 < x < 1std
-/// -1std < x < 0
 /// -2strd < x < -1std D
 /// x < -2std F
 
@@ -438,7 +439,7 @@ fn test_diff() {
         },
     ];
     let result = diff(&test_vec, 1);
-    println!("diff {:?}", result);
+    // println!("diff {:?}", result);
     assert_eq!(result[0], -1.0);
     assert_eq!(result[1], 3.0);
     assert_eq!(result[2], 2.0);
