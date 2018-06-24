@@ -12,7 +12,7 @@ pub fn call(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
 ) {
-    let windows = strategies::window(quotes, strategy.param as usize);
+    let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
         let signal = above_ma(&w);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);

@@ -4,24 +4,26 @@ use std::collections::BTreeMap;
 use trade_signal;
 use trade_signal::TradeSignal;
 use uuid::Uuid;
+use window::Window;
 
-pub mod con_down_days;
-pub mod con_up_days;
-pub mod gap_up_days;
-pub mod gap_down_days;
-pub mod highest_high_value;
-pub mod lowest_low_value;
 pub mod above_ma;
 pub mod below_ma;
+pub mod con_down_days;
+pub mod con_up_days;
+pub mod gap_down_days;
+pub mod gap_up_days;
+pub mod highest_high_value;
+pub mod lowest_low_value;
+pub mod stddev_a;
 
 /// consecutive up volume
 /// consecutive down volume
 /// cross above ma
 /// cross below ma
-/// above 2std A 
+/// above 2std A
 /// above 1std < 2std B
 /// 0 < x < 1std
-/// -1std < x < 0 
+/// -1std < x < 0
 /// -2strd < x < -1std D
 /// x < -2std F
 
@@ -34,12 +36,6 @@ pub struct Strategy {
     pub param: i32,
     pub target_ticker: String,
     pub generation: i32,
-}
-
-#[derive(Debug, Clone)]
-pub struct Window {
-    pub window: Vec<Quote>,
-    pub current_quote: Quote,
 }
 
 #[derive(Debug, Clone)]
@@ -131,7 +127,7 @@ fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) 
 ///
 /// returns tuple: (array of windows, current_quote)
 ///
-fn window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
+fn make_window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
     let mut windows: Vec<Window> = vec![];
     for n in length..quotes.len() {
         let start_index = n - length;
@@ -145,14 +141,7 @@ fn window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
     windows
 }
 
-// Takes the lagged window of quotes and the current window and creates a
-// a single vector of quote
-fn flatten_window(window: &Window) -> Vec<Quote> {
-    let mut w = window.window.clone();
-    w.push(window.current_quote.clone());
-    w
-}
-
+/// Lag create a lag object from a vector of Quotes
 fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
     let mut lag: Vec<Lag> = vec![];
     for n in periods..quotes.len() {
@@ -165,6 +154,19 @@ fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
         lag.push(new_lag);
     }
     lag
+}
+
+/// Takes diff of close
+fn diff(quotes: &Vec<Quote>, lag: usize) -> Vec<f32> {
+    let mut diffs: Vec<f32> = vec![];
+    for n in lag..quotes.len() {
+        let lag_n = n - lag;
+        let lag_quote = &quotes[lag_n];
+        let current_quote = &quotes[n];
+        let diff = current_quote.close - lag_quote.close;
+        diffs.push(diff);
+    }
+    diffs
 }
 
 /// Calculates average from vector of f32s
@@ -325,7 +327,7 @@ fn test_flatten_window() {
             volume: 1000.5,
         },
     };
-    let f_window = flatten_window(&w);
+    let f_window = &w.flatten();
     let expected = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -370,10 +372,76 @@ fn test_flatten_window() {
     assert_eq!(expected[3].ts, f_window[3].ts);
 }
 
-
 #[test]
 fn test_std_dev() {
     let test_vec: Vec<f32> = vec![6.0, 2.0, 3.0, 1.0];
     let result = std_dev(test_vec);
     assert_eq!(result, 1.8708287 as f32);
+}
+
+#[test]
+fn test_diff() {
+    let test_vec = vec![
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528745804.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 100.00,
+            volume: 1000.20,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528746805.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.80,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528747806.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 102.00,
+            volume: 999.75,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528748807.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 104.00,
+            volume: 1000.50,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528749808.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 110.00,
+            volume: 1000.49,
+        },
+        Quote {
+            ticker: "AAPL".to_string(),
+            ts: 1528750809.0,
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 99.00,
+            volume: 1000.79,
+        },
+    ];
+    let result = diff(&test_vec, 1);
+    println!("diff {:?}", result);
+    assert_eq!(result[0], -1.0);
+    assert_eq!(result[1], 3.0);
+    assert_eq!(result[2], 2.0);
+    assert_eq!(result[3], 6.0);
+    assert_eq!(result[4], -11.0);
 }

@@ -3,22 +3,23 @@ use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
+use window::Window;
 
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
 ) {
-    let windows = strategies::window(quotes, strategy.param as usize);
+    let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
         let signal = gap_down_days(&w, strategy.param);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn gap_down_days(window: &strategies::Window, param: i32) -> i32 {
+fn gap_down_days(window: &Window, param: i32) -> i32 {
     let mut gap_down_days: Vec<i32> = vec![];
-    let quotes = strategies::flatten_window(window);
+    let quotes = window.flatten();
     for i in 1..quotes.len() {
         let current_quote = &quotes[i];
         let previous_quote = &quotes[i - 1];

@@ -1,21 +1,21 @@
 use schemas::Quote;
 use std::collections::BTreeMap;
+use strategies;
 use strategies::insert_signal;
-use strategies::window;
 use strategies::Strategy;
-use strategies::Window;
 use trade_signal::TradeSignal;
+use window::Window;
 
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
-)  {
-    let windows = window(quotes, strategy.param as usize);
+) {
+    let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
         let signal = highest_high_value(&w);
         insert_signal(trade_signals, &w, &strategy, &signal);
-    };
+    }
 }
 
 /// Calculate highest high in window

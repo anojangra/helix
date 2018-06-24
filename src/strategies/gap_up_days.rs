@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
 use trade_signal::TradeSignal;
+use window::Window;
 
 /// Gap up days
 /// 
@@ -15,16 +16,16 @@ pub fn call(
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
 ) {
-    let windows = strategies::window(quotes, strategy.param as usize);
+    let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
         let signal = gap_up_days(&w, strategy.param);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn gap_up_days(window: &strategies::Window, param: i32) -> i32 {
+fn gap_up_days(window: &Window, param: i32) -> i32 {
     let mut gap_up_days: Vec<i32> = vec![];
-    let quotes = strategies::flatten_window(window);
+    let quotes = window.flatten();
     for i in 1..quotes.len() {
         let current_quote = &quotes[i];
         let previous_quote = &quotes[i - 1];

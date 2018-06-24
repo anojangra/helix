@@ -1,6 +1,6 @@
 extern crate uuid;
 use strategies::Strategy;
-use strategies::Window;
+use window::Window;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]

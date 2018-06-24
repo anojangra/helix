@@ -21,6 +21,7 @@ mod schemas;
 mod strategies;
 mod trade_signal;
 mod writer;
+mod window;
 
 use chromosome::Chromosome;
 use repo::get_quotes_by_symbol;
