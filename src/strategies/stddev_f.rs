@@ -22,11 +22,11 @@ pub fn call(
 
 fn generator(window: &Window) -> i32 {
     let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
-    println!("close diffs: {:?}", close_diffs);
+    // println!("close diffs: {:?}", close_diffs);
     let std_dev = strategies::std_dev(close_diffs);
-    println!("stddev: {}", std_dev);
+    // println!("stddev: {}", std_dev);
     let current_diff = window.current_diff();
-    println!("current_diff: {}", current_diff);
+    // println!("current_diff: {}", current_diff);
     if current_diff <= (-std_dev * 2.0) {
         return 1;
     }

@@ -239,6 +239,7 @@ fn update_chromosome(
     trade_signals: BTreeMap<String, TradeSignal>,
 ) -> Chromosome {
     let mut updated_chromosome = chromosome.clone();
+    let total_trade_signals = &trade_signals.len();
     let signaled_trades: Vec<TradeSignal> = trade_signals
         .into_iter()
         .map(|x| x.1)
@@ -256,7 +257,7 @@ fn update_chromosome(
     updated_chromosome.variance = variance;
     updated_chromosome.kelly = kelly;
     updated_chromosome.num_of_trades = num_of_trades;
-    updated_chromosome.w_kelly = kelly * num_of_trades as f32;
+    updated_chromosome.w_kelly = kelly * (num_of_trades as f32 / *total_trade_signals as f32);
     updated_chromosome
 }
 
