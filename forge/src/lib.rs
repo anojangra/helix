@@ -1,3 +1,7 @@
+//! # Forge where
+//!
+//! Where does the rest of this go?
+//!
 extern crate uuid;
 extern crate rand;
 

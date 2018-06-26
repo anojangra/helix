@@ -24,8 +24,12 @@ pub struct Chromosome {
     pub rank: i32,
 }
 
-/// Generate chromosomes from dnas
-///
+/// Generate chromosomes
+/// 
+/// ## Example
+/// ```
+/// cools
+/// ```
 pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Vec<Chromosome> {
     // debug!("generate chromosomes");
     let mut chromosomes: Vec<Chromosome> = vec![];

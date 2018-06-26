@@ -1,19 +1,24 @@
+//! dna type
+//!
+//! Where does the rest of this go?
+//!
+
 use rand::prelude::*;
 
 pub type Dna = Vec<i32>;
 
-// Generates qty dnas of length len
+/// Generates qty dnas of length len
 pub fn generate_dnas(len: i32, qty: i32) -> Vec<Dna> {
     let mut dnas: Vec<Dna> = vec![];
     for _i in 0..qty {
-        let dna = generate(len);
+        let dna = generate_dna(len);
         dnas.push(dna);
     }
     dnas
 }
 
 // Generates random dna
-pub fn generate(len: i32) -> Dna {
+fn generate_dna(len: i32) -> Dna {
     let mut dna: Vec<i32> = vec![];
     let mut rng = thread_rng();
     for _i in 0..len {
