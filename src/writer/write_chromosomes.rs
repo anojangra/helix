@@ -16,7 +16,7 @@ pub fn call(chromosomes: &Vec<Chromosome>) {
         let c = chromosome;
         write!(
             f,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             c.id,
             c.target_ticker,
             c.chromosome,
@@ -29,6 +29,9 @@ pub fn call(chromosomes: &Vec<Chromosome>) {
             c.mean_return,
             c.w_kelly,
             c.num_of_trades,
+            c.winning_trades,
+            c.losing_trades,
+            c.percentage_winners,
             c.rank
         ).unwrap();
     }

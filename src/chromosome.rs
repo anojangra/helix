@@ -18,6 +18,9 @@ pub struct Chromosome {
     pub mean_return: f32,
     pub w_kelly: f32,
     pub num_of_trades: i32,
+    pub winning_trades: i32,
+    pub losing_trades: i32,
+    pub percentage_winners: f32,
     pub rank: i32,
 }
 
@@ -42,6 +45,9 @@ pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Ve
             mean_return: 0.0,
             w_kelly: 0.0,
             num_of_trades: 0,
+            winning_trades: 0,
+            losing_trades: 0,
+            percentage_winners: 0.0,
             rank: 0,
         };
         chromosomes.push(chromosome);

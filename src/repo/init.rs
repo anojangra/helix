@@ -40,6 +40,9 @@ pub fn init_chromosomes() {
             mean_return numeric,
             w_kelly numeric,
             num_of_trades integer,
+            winning_trades integer,
+            losing_trades integer,
+            percentage_winners numeric,
             rank integer
             );",
     ).unwrap();

@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS trade_signals;
 CREATE TABLE trade_signals (
     chromosome_id uuid
 ,   ts integer not null
-,   stratgies text array
+,   strategies text array
 ,   signals integer array
 ,   target_ticker text
 ,   hard_signal integer
@@ -27,5 +27,8 @@ CREATE TABLE trade_chromosomes (
   mean_return numeric,
   w_kelly numeric,
   num_of_trades integer,
+  winning_trades integer,
+  losing_trades integer,
+  percentage_winners numeric,
   rank integer
 );

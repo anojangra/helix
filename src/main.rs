@@ -20,8 +20,8 @@ mod repo;
 mod schemas;
 mod strategies;
 mod trade_signal;
-mod writer;
 mod window;
+mod writer;
 
 use chromosome::Chromosome;
 use repo::get_quotes_by_symbol;
@@ -251,6 +251,10 @@ fn update_chromosome(
     let variance = variance(&signaled_trades);
     let kelly = kelly(mean_return, variance);
     let num_of_trades = signaled_trades.len() as i32;
+    let winning_trades: i32 = winning_trades(&signaled_trades);
+    let losing_trades: i32 = losing_trades(&signaled_trades);
+    let percentage_winners: f32 = percentage_winners(winning_trades, num_of_trades);
+    // let percentage_winners: winning_trades as f32 / num_of_trades as f32;
     // Update chromosome
     updated_chromosome.cum_pnl = cum_pnl;
     updated_chromosome.mean_return = mean_return;
@@ -258,16 +262,43 @@ fn update_chromosome(
     updated_chromosome.kelly = kelly;
     updated_chromosome.num_of_trades = num_of_trades;
     updated_chromosome.w_kelly = kelly * (num_of_trades as f32 / *total_trade_signals as f32);
+    updated_chromosome.losing_trades = losing_trades;
+    updated_chromosome.winning_trades = winning_trades;
+    updated_chromosome.percentage_winners = percentage_winners;
+    // println!("xxx chromosome: {:?}", updated_chromosome);
     updated_chromosome
+}
+
+fn winning_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
+    let winning_trades: Vec<&TradeSignal> = signaled_trades
+        .iter()
+        .filter(|signal| signal.pnl > 0.0)
+        .collect();
+    winning_trades.len() as i32
+}
+
+fn losing_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
+    let losing_trades: Vec<&TradeSignal> = signaled_trades
+        .iter()
+        .filter(|signal| signal.pnl < 0.0)
+        .collect();
+    losing_trades.len() as i32
+}
+
+fn percentage_winners(num_winners: i32, num_of_trades: i32) -> f32 {
+    if num_of_trades < 0 {
+        return 0.0;
+    }
+    return num_winners as f32 / num_of_trades as f32;
 }
 
 // Rank chromosomes by w_kelly
 fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
     let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
         .into_iter()
-        .filter(|c| c.num_of_trades > 30)
+        .filter(|c| c.num_of_trades > 100)
         .collect();
-    filtered_chromosomes.sort_by_key(|c| c.w_kelly as i32);
+    filtered_chromosomes.sort_by_key(|c| c.percentage_winners as i32);
     let end_idx = filtered_chromosomes.len() as i32;
     let fittest = config::FITTEST as i32;
     let start_idx = end_idx - fittest;
