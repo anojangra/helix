@@ -1,4 +1,4 @@
-use chromosome::Chromosome;
+use forge::Chromosome;
 use repo;
 use std::collections::BTreeMap;
 use std::fs;

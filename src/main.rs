@@ -22,9 +22,7 @@ mod trade_signal;
 mod window;
 mod writer;
 
-use forge::chromosome::Chromosome;
-use forge::dna;
-use forge::chromosome;
+use forge::Chromosome;
 use repo::get_quotes_by_symbol;
 use repo::get_tickers;
 use schemas::Quote;
@@ -40,7 +38,7 @@ fn main() {
     env_logger::init();
     info!("Hello, world!");
     let quotes_repo = init_quotes_repo();
-    let dnas = dna::generate_dnas(12, config::POPULATION_SIZE);
+    let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
     repo::init::init_trade_signals();
     repo::init::init_chromosomes();
@@ -49,7 +47,7 @@ fn main() {
         warn!("Running generation: {}", i);
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
-            chromosomes = chromosome::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
+            chromosomes = forge::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
             chromosomes = darwin::evolve(ranked_chromosomes, i);
         }

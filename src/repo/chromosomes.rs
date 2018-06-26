@@ -1,6 +1,6 @@
 use repo::pg;
 use repo::sql;
-use chromosome::Chromosome;
+use forge::Chromosome;
 
 pub fn copy() {
     let conn = pg::connect();

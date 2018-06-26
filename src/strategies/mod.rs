@@ -1,4 +1,4 @@
-use chromosome::Chromosome;
+use forge::Chromosome;
 use schemas::Quote;
 use std::collections::BTreeMap;
 use trade_signal;
