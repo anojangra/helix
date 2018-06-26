@@ -1,7 +1,7 @@
 extern crate uuid;
 use strategies::Strategy;
-use window::Window;
 use uuid::Uuid;
+use window::Window;
 
 #[derive(Debug, Clone)]
 pub struct TradeSignal {

@@ -1,4 +1,4 @@
-use schemas::Quote;
+use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies::insert_signal;
 use strategies::make_window;

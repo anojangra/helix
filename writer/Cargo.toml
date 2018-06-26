@@ -4,7 +4,11 @@ version = "0.1.0"
 authors = ["choiway <waynechoi@gmail.com>"]
 
 [dependencies]
-
+log = "0.4.2"
+env_logger = "0.5.10"
 
 [dependencies.forge]
 path = "../forge"
+
+[dependencies.repo]
+path = "../repo"

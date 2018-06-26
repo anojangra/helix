@@ -1,5 +1,5 @@
 use forge::Chromosome;
-use schemas::Quote;
+use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use trade_signal;
 use trade_signal::TradeSignal;

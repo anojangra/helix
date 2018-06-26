@@ -1,4 +1,4 @@
-use schemas::Quote;
+use repo::schemas::Quote;
 
 #[derive(Debug, Clone)]
 pub struct Window {

@@ -7,26 +7,23 @@ extern crate log;
 extern crate chrono;
 extern crate crossbeam_channel;
 extern crate env_logger;
+extern crate forge;
 extern crate postgres;
 extern crate rand;
+extern crate repo;
 extern crate threadpool;
 extern crate uuid;
-extern crate forge;
 
 mod config;
 mod darwin;
-mod repo;
-mod schemas;
 mod strategies;
 mod trade_signal;
 mod window;
 mod writer;
 
 use forge::Chromosome;
-use repo::get_quotes_by_symbol;
-use repo::get_tickers;
-use schemas::Quote;
-use schemas::Return;
+use repo::schemas::Quote;
+use repo::schemas::Return;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::mpsc::channel;
@@ -40,8 +37,8 @@ fn main() {
     let quotes_repo = init_quotes_repo();
     let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
-    repo::init::init_trade_signals();
-    repo::init::init_chromosomes();
+    repo::init_trade_signals();
+    repo::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
     for i in 1..4 {
         warn!("Running generation: {}", i);
@@ -77,9 +74,9 @@ fn main() {
 /// Initializes hashmap for quotes
 fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
     let mut repo = HashMap::new();
-    for ticker in get_tickers::call() {
+    for ticker in repo::get_tickers() {
         debug!("{:?}", ticker);
-        let quotes = get_quotes_by_symbol::call(&ticker.symbol);
+        let quotes = repo::get_quotes_by_symbol(&ticker.symbol);
         repo.insert(ticker.symbol, quotes);
     }
     repo
@@ -89,7 +86,7 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
 fn init_returns() -> BTreeMap<String, Return> {
     debug!("Initializing returns");
     let mut repo: BTreeMap<String, Return> = BTreeMap::new();
-    for ret in repo::get_returns::call(config::TARGET_TICKER.to_string()) {
+    for ret in repo::get_returns(config::TARGET_TICKER.to_string()) {
         let ts = ret.ts.to_string();
         repo.insert(ts, ret);
     }
