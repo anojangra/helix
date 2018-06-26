@@ -1,0 +1,8 @@
+[package]
+name = "forge"
+version = "0.1.0"
+authors = ["choiway <waynechoi@gmail.com>"]
+
+[dependencies]
+uuid = { version = "0.5", features = ["v4"] }
+rand = "0.5.1"

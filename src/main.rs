@@ -11,11 +11,10 @@ extern crate postgres;
 extern crate rand;
 extern crate threadpool;
 extern crate uuid;
+extern crate forge;
 
-mod chromosome;
 mod config;
 mod darwin;
-mod dna;
 mod repo;
 mod schemas;
 mod strategies;
@@ -23,7 +22,9 @@ mod trade_signal;
 mod window;
 mod writer;
 
-use chromosome::Chromosome;
+use forge::chromosome::Chromosome;
+use forge::dna;
+use forge::chromosome;
 use repo::get_quotes_by_symbol;
 use repo::get_tickers;
 use schemas::Quote;
