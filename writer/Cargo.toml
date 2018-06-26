@@ -1,0 +1,10 @@
+[package]
+name = "writer"
+version = "0.1.0"
+authors = ["choiway <waynechoi@gmail.com>"]
+
+[dependencies]
+
+
+[dependencies.forge]
+path = "../forge"
