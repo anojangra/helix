@@ -197,6 +197,9 @@ fn test_expand_strategy() {
         mean_return: 0.0,
         w_kelly: 0.0,
         num_of_trades: 0,
+        losing_trades: 0,
+        winning_trades: 0,
+        percentage_winners: 0.0,
         rank: 0,
     };
 
