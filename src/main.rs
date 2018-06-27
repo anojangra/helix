@@ -1,7 +1,10 @@
-//! # Helix is awesome
+//! An implementation of a genetic algortihm that use grammtical evolution
+//! to find trading signals
 //!
-//! Where does the rest of this go?
-//!
+//! A couple highlights
+//! ==
+//! * uses btreemap to keep track of signals
+//! * concurrently processes trading signals
 #[macro_use]
 extern crate log;
 extern crate crossbeam_channel;
@@ -26,11 +29,11 @@ pub fn main() {
     info!("Hello, world!");
     // Init
     let quotes_repo = init_quotes_repo();
-    let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
     repo::init_trade_signals();
     repo::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
+    let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     // Run generations
     for i in 1..4 {
         warn!("Running generation: {}", i);
@@ -44,9 +47,10 @@ pub fn main() {
         let c_len = *&chromosomes.len();
         // Init channel to collect updated chromosomes
         let (c_tx, c_rx) = channel();
-        // Init throttle
-        // The throttle limits the number of chromosomes that are processed at 
-        // any given time
+        // Init throttle channel
+        // The throttle limits the number of chromosomes that are processed at
+        // any given time. A key here is that the channel is bounded which 
+        // blocks when the channel is full. 
         let (throttle_tx, throttle_rx) = crossbeam_channel::bounded(8);
         // Process chromosomes and collect results in channel
         for chromosome in chromosomes {
@@ -55,6 +59,7 @@ pub fn main() {
             let tx_n = c_tx.clone();
             let t_rx = throttle_rx.clone();
             // Send integer to throttle to start count
+            // The value doesn't matter
             throttle_tx.send(1);
             debug!("Throttle length: {}", throttle_rx.len());
             thread::spawn(move || {
@@ -63,7 +68,6 @@ pub fn main() {
                 t_rx.recv().unwrap();
             });
         }
-
         let updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
         ranked_chromosomes = rank_chromosomes(updated_chromosomes);
         writer::write_chromosomes(&ranked_chromosomes);

@@ -4,6 +4,7 @@ use strategies;
 use strategies::Strategy;
 use TradeSignal;
 use Window;
+use calc;
 
 /// Standard deviation less than -1 sigma but greater than -2 sigma
 ///
@@ -23,7 +24,7 @@ pub fn call(
 fn generator(window: &Window) -> i32 {
     let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
     // println!("close diffs: {:?}", close_diffs);
-    let std_dev = strategies::std_dev(close_diffs);
+    let std_dev = calc::std_dev(close_diffs);
     // println!("stddev: {}", std_dev);
     let current_diff = window.current_diff();
     // println!("current_diff: {}", current_diff);

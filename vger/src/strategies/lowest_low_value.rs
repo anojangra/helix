@@ -6,6 +6,7 @@ use strategies::Strategy;
 use TradeSignal;
 use Window;
 
+/// Lowest low value
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,

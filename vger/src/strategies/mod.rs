@@ -1,29 +1,23 @@
+//! Trading strategies
+//!
+//! Strategies take the following argument
 use forge::Chromosome;
+use init_trade_signal;
 use repo::schemas::Quote;
 use std::collections::BTreeMap;
-use TradeSignal;
 use uuid::Uuid;
+use TradeSignal;
 use Window;
-use init_trade_signal;
 
 pub mod above_ma;
-/// signal occurs when price is below moving average
 pub mod below_ma;
-/// consecutive down days
 pub mod con_down_days;
-/// consecutive up days
 pub mod con_up_days;
-/// gap down days
 pub mod gap_down_days;
-/// gap up days
 pub mod gap_up_days;
-/// highest high value
 pub mod highest_high_value;
-/// lowest low value
 pub mod lowest_low_value;
-/// diff > 2 sigma
 pub mod stddev_a;
-/// +2 sigma > diff > +1 sigma
 pub mod stddev_b;
 pub mod stddev_d;
 pub mod stddev_f;
@@ -36,24 +30,30 @@ pub mod stddev_f;
 #[derive(Debug, Clone)]
 pub struct Strategy {
     pub chromosome_id: Uuid,
+    /// string derived from dna `llv:AAPL:2::gapupday:GOOG:10`
     pub strategy: String,
+    /// strategy code: `llv`
     pub code: String,
+    /// ticker symbol
     pub ticker: String,
     pub param: i32,
     pub target_ticker: String,
     pub generation: i32,
 }
 
+/// Gets the current quote and quotes from `n periods` ago
 #[derive(Debug, Clone)]
 pub struct Lag {
+    /// Quote `t^0 - n` ago
     pub lag_quote: Quote,
+    /// Quote at `t^0`
     pub current_quote: Quote,
 }
 
 /// Expands chromosome of strategies to a list of strategies
 ///
 /// ```
-/// "llv:AAPL:2::gapupday:GOOG:10"
+/// llv:AAPL:2::gapupday:GOOG:10
 ///
 /// Returns
 /// [
@@ -78,7 +78,7 @@ pub fn expand_strategies(chromosome: Chromosome) -> Vec<Strategy> {
     expanded_strategies
 }
 
-/// Expands chrosomes to Strategy
+/// Expands chromosomes to Strategy
 pub fn expand_strategy(chromosome: Chromosome, strategy: String) -> Strategy {
     let v: Vec<&str> = strategy.split(":").collect();
     let strategy_name = strategy.clone();
@@ -143,9 +143,9 @@ fn make_window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
     windows
 }
 
-/// Lag create a lag object from a vector of Quotes
-fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
-    let mut lag: Vec<Lag> = vec![];
+/// creates a vector of `Lags`
+fn build_lags(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
+    let mut lags: Vec<Lag> = vec![];
     for n in periods..quotes.len() {
         let lag_n = n - periods;
         let lag_quote = &quotes[lag_n];
@@ -153,9 +153,9 @@ fn lag(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
             lag_quote: lag_quote.clone(),
             current_quote: quotes[n].clone(),
         };
-        lag.push(new_lag);
+        lags.push(new_lag);
     }
-    lag
+    lags
 }
 
 /// Takes diff of close
@@ -171,129 +171,156 @@ fn diff(quotes: &Vec<Quote>, lag: usize) -> Vec<f32> {
     diffs
 }
 
-/// Calculates average from vector of f32s
-pub fn average(values: Vec<f32>) -> f32 {
-    let sum: f32 = values.iter().sum();
-    return sum / values.len() as f32;
-}
 
-/// Calculates standard deviation from vector fo f32s
-pub fn std_dev(values: Vec<f32>) -> f32 {
-    let mean = average(values.clone());
-    let diffs: Vec<f32> = values.iter().map(|x| x - mean).collect();
-    let abs_diffs: Vec<f32> = diffs.iter().map(|x| x.abs()).collect();
-    let square_diffs: Vec<f32> = abs_diffs.iter().map(|x| x.powf(2 as f32)).collect();
-    let avg_diff = average(square_diffs);
-    avg_diff.sqrt()
-}
 
 #[cfg(test)]
-#[test]
-fn test_expand_strategy() {
-    let chromosome = Chromosome {
-        id: Uuid::new_v4(),
-        chromosome: "llv:krakenUSD:2::hhv:coinbaseUSD:3".to_string(),
-        target_ticker: "xlf".to_string(),
-        dna: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-        generation: 1,
-        chromosome_length: 2,
-        kelly: 0.0,
-        cum_pnl: 0.0,
-        variance: 0.0,
-        mean_return: 0.0,
-        w_kelly: 0.0,
-        num_of_trades: 0,
-        losing_trades: 0,
-        winning_trades: 0,
-        percentage_winners: 0.0,
-        rank: 0,
-    };
+mod test {
+    #[test]
+    fn test_expand_strategy() {
+        let chromosome = Chromosome {
+            id: Uuid::new_v4(),
+            chromosome: "llv:krakenUSD:2::hhv:coinbaseUSD:3".to_string(),
+            target_ticker: "xlf".to_string(),
+            dna: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            generation: 1,
+            chromosome_length: 2,
+            kelly: 0.0,
+            cum_pnl: 0.0,
+            variance: 0.0,
+            mean_return: 0.0,
+            w_kelly: 0.0,
+            num_of_trades: 0,
+            losing_trades: 0,
+            winning_trades: 0,
+            percentage_winners: 0.0,
+            rank: 0,
+        };
 
-    let expected = Strategy {
-        chromosome_id: chromosome.id,
-        strategy: "llv:krakenUSD:2".to_string(),
-        code: String::from("llv"),
-        ticker: String::from("krakenUSD"),
-        target_ticker: chromosome.target_ticker.clone(),
-        param: 2,
-        generation: chromosome.generation,
-    };
+        let expected = Strategy {
+            chromosome_id: chromosome.id,
+            strategy: "llv:krakenUSD:2".to_string(),
+            code: String::from("llv"),
+            ticker: String::from("krakenUSD"),
+            target_ticker: chromosome.target_ticker.clone(),
+            param: 2,
+            generation: chromosome.generation,
+        };
 
-    let actual = expand_strategy(chromosome, "llv:krakenUSD:2".to_string());
+        let actual = expand_strategy(chromosome, "llv:krakenUSD:2".to_string());
 
-    assert_eq!(expected.code, actual.code);
-    assert_eq!(expected.ticker, actual.ticker);
-    assert_eq!(expected.param, actual.param);
-}
+        assert_eq!(expected.code, actual.code);
+        assert_eq!(expected.ticker, actual.ticker);
+        assert_eq!(expected.param, actual.param);
+    }
 
-#[test]
-fn test_window() {
-    let test_vec = vec![
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528745804.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.20,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528746805.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.80,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528747806.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 999.75,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528748807.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.50,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528749808.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.49,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528750809.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.79,
-        },
-    ];
-    let windows = make_window(&test_vec, 3);
-    let first_window = &windows[0];
-    assert_eq!(first_window.window[0].ts, 1528745804.0);
-    assert_eq!(first_window.current_quote.ts, 1528748807.0);
-}
+    #[test]
+    fn test_window() {
+        let test_vec = vec![
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528745804.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.20,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528746805.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.80,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528747806.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 999.75,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528748807.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.50,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528749808.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.49,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528750809.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.79,
+            },
+        ];
+        let windows = make_window(&test_vec, 3);
+        let first_window = &windows[0];
+        assert_eq!(first_window.window[0].ts, 1528745804.0);
+        assert_eq!(first_window.current_quote.ts, 1528748807.0);
+    }
 
-#[test]
-fn test_flatten_window() {
-    let w = Window {
-        window: vec![
+    #[test]
+    fn test_flatten_window() {
+        let w = Window {
+            window: vec![
+                Quote {
+                    ticker: "AAPL".to_string(),
+                    ts: 1528745804.0,
+                    open: 100.0,
+                    high: 105.0,
+                    low: 99.0,
+                    close: 99.0,
+                    volume: 1000.2,
+                },
+                Quote {
+                    ticker: "AAPL".to_string(),
+                    ts: 1528746805.0,
+                    open: 100.0,
+                    high: 105.0,
+                    low: 99.0,
+                    close: 99.0,
+                    volume: 1000.8,
+                },
+                Quote {
+                    ticker: "AAPL".to_string(),
+                    ts: 1528747806.0,
+                    open: 100.0,
+                    high: 105.0,
+                    low: 99.0,
+                    close: 99.0,
+                    volume: 999.75,
+                },
+            ],
+            current_quote: Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528748807.0,
+                open: 100.0,
+                high: 105.0,
+                low: 99.0,
+                close: 99.0,
+                volume: 1000.5,
+            },
+        };
+        let f_window = &w.flatten();
+        let expected = vec![
             Quote {
                 ticker: "AAPL".to_string(),
                 ts: 1528745804.0,
@@ -321,132 +348,93 @@ fn test_flatten_window() {
                 close: 99.0,
                 volume: 999.75,
             },
-        ],
-        current_quote: Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528748807.0,
-            open: 100.0,
-            high: 105.0,
-            low: 99.0,
-            close: 99.0,
-            volume: 1000.5,
-        },
-    };
-    let f_window = &w.flatten();
-    let expected = vec![
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528745804.0,
-            open: 100.0,
-            high: 105.0,
-            low: 99.0,
-            close: 99.0,
-            volume: 1000.2,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528746805.0,
-            open: 100.0,
-            high: 105.0,
-            low: 99.0,
-            close: 99.0,
-            volume: 1000.8,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528747806.0,
-            open: 100.0,
-            high: 105.0,
-            low: 99.0,
-            close: 99.0,
-            volume: 999.75,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528748807.0,
-            open: 100.0,
-            high: 105.0,
-            low: 99.0,
-            close: 99.0,
-            volume: 1000.5,
-        },
-    ];
-    assert_eq!(expected[0].ts, f_window[0].ts);
-    assert_eq!(expected[1].ts, f_window[1].ts);
-    assert_eq!(expected[2].ts, f_window[2].ts);
-    assert_eq!(expected[3].ts, f_window[3].ts);
-}
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528748807.0,
+                open: 100.0,
+                high: 105.0,
+                low: 99.0,
+                close: 99.0,
+                volume: 1000.5,
+            },
+        ];
+        assert_eq!(expected[0].ts, f_window[0].ts);
+        assert_eq!(expected[1].ts, f_window[1].ts);
+        assert_eq!(expected[2].ts, f_window[2].ts);
+        assert_eq!(expected[3].ts, f_window[3].ts);
+    }
 
-#[test]
-fn test_std_dev() {
-    let test_vec: Vec<f32> = vec![6.0, 2.0, 3.0, 1.0];
-    let result = std_dev(test_vec);
-    assert_eq!(result, 1.8708287 as f32);
-}
+    #[test]
+    fn test_std_dev() {
+        let test_vec: Vec<f32> = vec![6.0, 2.0, 3.0, 1.0];
+        let result = std_dev(test_vec);
+        assert_eq!(result, 1.8708287 as f32);
+    }
 
-#[test]
-fn test_diff() {
-    let test_vec = vec![
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528745804.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 100.00,
-            volume: 1000.20,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528746805.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.80,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528747806.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 102.00,
-            volume: 999.75,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528748807.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 104.00,
-            volume: 1000.50,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528749808.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 110.00,
-            volume: 1000.49,
-        },
-        Quote {
-            ticker: "AAPL".to_string(),
-            ts: 1528750809.0,
-            open: 100.00,
-            high: 105.00,
-            low: 99.00,
-            close: 99.00,
-            volume: 1000.79,
-        },
-    ];
-    let result = diff(&test_vec, 1);
-    // println!("diff {:?}", result);
-    assert_eq!(result[0], -1.0);
-    assert_eq!(result[1], 3.0);
-    assert_eq!(result[2], 2.0);
-    assert_eq!(result[3], 6.0);
-    assert_eq!(result[4], -11.0);
+    #[test]
+    fn test_diff() {
+        let test_vec = vec![
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528745804.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 100.00,
+                volume: 1000.20,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528746805.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.80,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528747806.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 102.00,
+                volume: 999.75,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528748807.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 104.00,
+                volume: 1000.50,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528749808.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 110.00,
+                volume: 1000.49,
+            },
+            Quote {
+                ticker: "AAPL".to_string(),
+                ts: 1528750809.0,
+                open: 100.00,
+                high: 105.00,
+                low: 99.00,
+                close: 99.00,
+                volume: 1000.79,
+            },
+        ];
+        let result = diff(&test_vec, 1);
+        // println!("diff {:?}", result);
+        assert_eq!(result[0], -1.0);
+        assert_eq!(result[1], 3.0);
+        assert_eq!(result[2], 2.0);
+        assert_eq!(result[3], 6.0);
+        assert_eq!(result[4], -11.0);
+    }
 }

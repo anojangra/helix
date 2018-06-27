@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
 use TradeSignal;
+use calc;
 
 /// Below Moving Average
 /// 
@@ -21,7 +22,7 @@ pub fn call(
 
 fn below_ma(window: &strategies::Window) -> i32 {
     let closes: Vec<f32> = window.window.iter().map(|quote| quote.close).collect();
-    let ma = strategies::average(closes);
+    let ma = calc::average(closes);
     if window.current_quote.close < ma {
         return 1;
     }

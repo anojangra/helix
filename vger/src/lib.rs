@@ -14,8 +14,8 @@ use std::collections::HashMap;
 use strategies::Strategy;
 use uuid::Uuid;
 
-/// Trading strategies
 pub mod strategies;
+pub mod calc;
 
 /// Struct for grouping daily trade signal data
 #[derive(Debug, Clone)]
@@ -162,7 +162,7 @@ pub fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: C
     }
 }
 
-/// Calculate mean return
+/// Calculate mean return from triggered trade signals
 pub fn mean_return(signaled_trades: &Vec<TradeSignal>) -> f32 {
     let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
     if signaled_trades.len() > 0 {
@@ -187,14 +187,6 @@ pub fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
     0.0
 }
 
-/// Calculates kelly ratio
-pub fn kelly(mean: f32, variance: f32) -> f32 {
-    if variance > 0.0 {
-        return mean / variance;
-    }
-    return 0.0;
-}
-
 /// Updates chromsome with summary data
 pub fn update_chromosome(
     chromosome: Chromosome,
@@ -212,7 +204,7 @@ pub fn update_chromosome(
     let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
     let mean_return = mean_return(&signaled_trades);
     let variance = variance(&signaled_trades);
-    let kelly = kelly(mean_return, variance);
+    let kelly = calc::kelly(mean_return, variance);
     let num_of_trades = signaled_trades.len() as i32;
     let winning_trades: i32 = winning_trades(&signaled_trades);
     let losing_trades: i32 = losing_trades(&signaled_trades);
