@@ -21,7 +21,7 @@ use repo::schemas::Quote;
 use repo::schemas::Return;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
 pub fn main() {
@@ -33,42 +33,29 @@ pub fn main() {
     repo::init_trade_signals();
     repo::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
-    let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     // Run generations
-    for i in 1..4 {
-        warn!("Running generation: {}", i);
-        // Generate or evolve chromosomes
-        let mut chromosomes: Vec<Chromosome> = vec![];
-        if i == 1 {
-            chromosomes = forge::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
-        } else {
-            chromosomes = forge::evolve(ranked_chromosomes, i);
-        }
-        let c_len = *&chromosomes.len();
-        // Init channel to collect updated chromosomes
-        let (c_tx, c_rx) = channel();
-        // Init throttle channel
-        // The throttle limits the number of chromosomes that are processed at
-        // any given time. A key here is that the channel is bounded which 
-        // blocks when the channel is full. 
-        let (throttle_tx, throttle_rx) = crossbeam_channel::bounded(8);
+    for generation in 1..4 {
+        let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation);
+        let chromosomes_len = *&chromosomes.len();
+        let (c_tx, c_rx) = init_chromosomes_channel();
+        let (throttle_tx, throttle_rx) = init_throttle(8);
         // Process chromosomes and collect results in channel
         for chromosome in chromosomes {
             let q_clone = quotes_repo.clone();
             let r_clone = returns.clone();
-            let tx_n = c_tx.clone();
-            let t_rx = throttle_rx.clone();
-            // Send integer to throttle to start count
-            // The value doesn't matter
-            throttle_tx.send(1);
+            let chromosome_chan = c_tx.clone();
+            let throttle = throttle_rx.clone();
+            throttle_tx.send(1); // Send integer to throttle to start count the value doesn't matter
             debug!("Throttle length: {}", throttle_rx.len());
             thread::spawn(move || {
-                tx_n.send(process_chromosome(&chromosome, q_clone, r_clone))
+                chromosome_chan
+                    .send(process_chromosome(&chromosome, q_clone, r_clone))
                     .unwrap();
-                t_rx.recv().unwrap();
+                throttle.recv().unwrap();
             });
         }
-        let updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
+        let updated_chromosomes: Vec<Chromosome> =
+            c_rx.iter().take(chromosomes_len).map(|c| c).collect();
         ranked_chromosomes = rank_chromosomes(updated_chromosomes);
         writer::write_chromosomes(&ranked_chromosomes);
     }
@@ -77,6 +64,7 @@ pub fn main() {
 
 /// Initializes hashmap for quotes
 fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
+    debug!("Initializing quotes repo");
     let mut repo = HashMap::new();
     for ticker in repo::get_tickers() {
         debug!("{:?}", ticker);
@@ -97,6 +85,35 @@ fn init_returns() -> BTreeMap<String, Return> {
     repo
 }
 
+/// Generate or evolve chromosomes
+fn generate_chromosomes(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chromosome> {
+    warn!("Running generation: {}", generation);
+    if generation == 1 {
+        let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
+        return forge::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER);
+    } else {
+        return forge::evolve(ranked_chromosomes, generation);
+    }
+}
+
+/// Init channel to collect updated chromosomes
+fn init_chromosomes_channel() -> (Sender<Chromosome>, Receiver<Chromosome>) {
+    channel()
+}
+
+/// Init throttle channel
+/// The throttle limits the number of chromosomes that are processed at
+/// any given time. A key here is that the channel is bounded which
+/// blocks when the channel is full.
+fn init_throttle(
+    workers: usize,
+) -> (
+    crossbeam_channel::Sender<i32>,
+    crossbeam_channel::Receiver<i32>,
+) {
+    crossbeam_channel::bounded(workers)
+}
+
 /// Generate signals and metadata for chromosome
 pub fn process_chromosome(
     chromosome: &Chromosome,
@@ -111,6 +128,19 @@ pub fn process_chromosome(
 }
 
 /// Rank chromosomes by w_kelly
+///
+/// Rank is determined by the offset of the chromosomes.
+///
+/// ## Rank calculation
+/// ```
+/// Assume:
+///
+/// let x = Vec![1...20];
+///
+/// if fittest = 5 then the start idx = 5 and negative rank = 20 - 5 - 5 - 1 which
+/// makes the starting index 9.
+///
+/// ```
 pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
     let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
         .into_iter()
