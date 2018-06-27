@@ -4,13 +4,19 @@ extern crate log;
 extern crate forge;
 extern crate repo;
 
+use forge::Chromosome;
 use repo::schemas::Quote;
+use repo::schemas::Return;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use strategies::Strategy;
 use uuid::Uuid;
 
+/// Trading strategies
 pub mod strategies;
 
+
+/// Struct for grouping daily trade signal data
 #[derive(Debug, Clone)]
 pub struct TradeSignal {
     pub chromosome_id: Uuid,
@@ -85,6 +91,168 @@ pub fn generate_strategy_signals(
         "stdevf" => strategies::stddev_f::call(strategy, trade_signals, quotes),
         _ => panic!("No such strategy"),
     };
+}
+
+/// Run strategy
+///
+/// Splits chromosome to strategies
+///
+pub fn generate_signals(
+    chromosome: &Chromosome,
+    quotes_repo: HashMap<String, Vec<Quote>>,
+) -> BTreeMap<String, TradeSignal> {
+    let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
+    let strategies = strategies::expand_strategies(chromosome.clone());
+    for strategy in strategies {
+        match quotes_repo.get(&strategy.ticker) {
+            Some(quotes) => {
+                generate_strategy_signals(strategy, &mut trade_signals, quotes);
+            }
+            None => panic!("this is a terrible mistake!"),
+        };
+    }
+    trade_signals
+}
+
+/// Merge returns into trade signals
+pub fn merge_returns(
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    returns: &BTreeMap<String, Return>,
+) {
+    let local = trade_signals.clone();
+    for key_value in &local {
+        let ts_string = key_value.1.ts.to_string();
+        match local.get(&ts_string) {
+            Some(s) => update_merge_trade_signal(s, trade_signals, &returns, &ts_string),
+            None => (),
+        };
+    }
+}
+
+/// Update merge trade signal
+pub fn update_merge_trade_signal(
+    trade_signal: &TradeSignal,
+    trade_signals: &mut BTreeMap<String, TradeSignal>,
+    returns: &BTreeMap<String, Return>,
+    ts_string: &String,
+) {
+    match returns.get(ts_string) {
+        Some(ret) => {
+            let t = trade_signal.clone();
+            let updated = TradeSignal { ret: ret.ret, ..t };
+            trade_signals.insert(ts_string.clone(), updated);
+        }
+        None => (),
+    };
+}
+
+/// Calculate hard signal and pnl
+pub fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: Chromosome) {
+    let local = trade_signals.clone();
+    for trade_signal in &local {
+        let mut s = trade_signal.1.clone();
+        let agg_signal: i32 = s.signals.iter().sum();
+        if chromosome.chromosome_length == agg_signal {
+            s.hard_signal = 1;
+            s.pnl = s.ret * 1.0;
+        }
+        trade_signals.insert(trade_signal.0.clone(), s);
+    }
+}
+
+/// Calculate mean return
+pub fn mean_return(signaled_trades: &Vec<TradeSignal>) -> f32 {
+    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
+    if signaled_trades.len() > 0 {
+        let mean_return: f32 = cum_pnl / signaled_trades.len() as f32;
+        return mean_return;
+    };
+    return 0.0 as f32;
+}
+
+// Calculate variance
+pub fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
+    if signaled_trades.len() > 0 {
+        let mean = mean_return(&signaled_trades);
+        let diffs: Vec<f32> = signaled_trades
+            .iter()
+            .map(|x| (x.pnl - mean).powi(2) as f32)
+            .collect();
+        let sum_diffs: f32 = diffs.iter().sum();
+        let v: f32 = sum_diffs / signaled_trades.len() as f32;
+        return v;
+    }
+    0.0
+}
+
+/// Calculate kelly
+pub fn kelly(mean: f32, variance: f32) -> f32 {
+    if variance > 0.0 {
+        return mean / variance;
+    }
+    return 0.0;
+}
+
+/// Update chromsome with summary data
+pub fn update_chromosome(
+    chromosome: Chromosome,
+    trade_signals: BTreeMap<String, TradeSignal>,
+) -> Chromosome {
+    let mut updated_chromosome = chromosome.clone();
+    let total_trade_signals = &trade_signals.len();
+    let signaled_trades: Vec<TradeSignal> = trade_signals
+        .into_iter()
+        .map(|x| x.1)
+        .filter(|signal| signal.hard_signal == 1)
+        .collect();
+    // Calculate pnl
+    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
+    let mean_return = mean_return(&signaled_trades);
+    let variance = variance(&signaled_trades);
+    let kelly = kelly(mean_return, variance);
+    let num_of_trades = signaled_trades.len() as i32;
+    let winning_trades: i32 = winning_trades(&signaled_trades);
+    let losing_trades: i32 = losing_trades(&signaled_trades);
+    let percentage_winners: f32 = percentage_winners(winning_trades, num_of_trades);
+    // let percentage_winners: winning_trades as f32 / num_of_trades as f32;
+    // Update chromosome
+    updated_chromosome.cum_pnl = cum_pnl;
+    updated_chromosome.mean_return = mean_return;
+    updated_chromosome.variance = variance;
+    updated_chromosome.kelly = kelly;
+    updated_chromosome.num_of_trades = num_of_trades;
+    updated_chromosome.w_kelly = kelly * (num_of_trades as f32 / *total_trade_signals as f32);
+    updated_chromosome.losing_trades = losing_trades;
+    updated_chromosome.winning_trades = winning_trades;
+    updated_chromosome.percentage_winners = percentage_winners;
+    // println!("xxx chromosome: {:?}", updated_chromosome);
+    updated_chromosome
+}
+
+/// Calculate winning trades
+pub fn winning_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
+    let winning_trades: Vec<&TradeSignal> = signaled_trades
+        .iter()
+        .filter(|signal| signal.pnl > 0.0)
+        .collect();
+    winning_trades.len() as i32
+}
+
+/// Calculate losing trades
+pub fn losing_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
+    let losing_trades: Vec<&TradeSignal> = signaled_trades
+        .iter()
+        .filter(|signal| signal.pnl < 0.0)
+        .collect();
+    losing_trades.len() as i32
+}
+
+/// Percentage winners
+pub fn percentage_winners(num_winners: i32, num_of_trades: i32) -> f32 {
+    if num_of_trades < 0 {
+        return 0.0;
+    }
+    return num_winners as f32 / num_of_trades as f32;
 }
 
 #[cfg(test)]

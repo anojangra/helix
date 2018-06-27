@@ -4,15 +4,10 @@
 //!
 #[macro_use]
 extern crate log;
-extern crate chrono;
 extern crate crossbeam_channel;
 extern crate env_logger;
 extern crate forge;
-extern crate postgres;
-extern crate rand;
 extern crate repo;
-extern crate threadpool;
-extern crate uuid;
 extern crate vger;
 extern crate writer;
 
@@ -25,9 +20,8 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::mpsc::channel;
 use std::thread;
-use vger::TradeSignal;
 
-fn main() {
+pub fn main() {
     env_logger::init();
     info!("Hello, world!");
     let quotes_repo = init_quotes_repo();
@@ -89,180 +83,21 @@ fn init_returns() -> BTreeMap<String, Return> {
     repo
 }
 
-// Generate signals and metadata for chromosome
-fn process_chromosome(
+/// Generate signals and metadata for chromosome
+pub fn process_chromosome(
     chromosome: &Chromosome,
     quotes_repo: HashMap<String, Vec<Quote>>,
     returns: BTreeMap<String, Return>,
 ) -> Chromosome {
-    let mut trade_signals = generate_signals(&chromosome, quotes_repo);
-    merge_returns(&mut trade_signals, &returns);
-    calc_pnl(&mut trade_signals, chromosome.clone());
+    let mut trade_signals = vger::generate_signals(&chromosome, quotes_repo);
+    vger::merge_returns(&mut trade_signals, &returns);
+    vger::calc_pnl(&mut trade_signals, chromosome.clone());
     writer::write_signals(&trade_signals, &chromosome);
-    update_chromosome(chromosome.clone(), trade_signals)
+    vger::update_chromosome(chromosome.clone(), trade_signals)
 }
 
-/// Run strategy
-///
-/// Splits chromosome to strategies
-///
-fn generate_signals(
-    chromosome: &Chromosome,
-    quotes_repo: HashMap<String, Vec<Quote>>,
-) -> BTreeMap<String, TradeSignal> {
-    let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
-    let strategies = vger::strategies::expand_strategies(chromosome.clone());
-    for strategy in strategies {
-        match quotes_repo.get(&strategy.ticker) {
-            Some(quotes) => {
-                vger::generate_strategy_signals(strategy, &mut trade_signals, quotes);
-            }
-            None => panic!("this is a terrible mistake!"),
-        };
-    }
-    trade_signals
-}
-
-/// Merge returns into trade signals
-fn merge_returns(
-    trade_signals: &mut BTreeMap<String, TradeSignal>,
-    returns: &BTreeMap<String, Return>,
-) {
-    let local = trade_signals.clone();
-    for key_value in &local {
-        let ts_string = key_value.1.ts.to_string();
-        match local.get(&ts_string) {
-            Some(s) => update_merge_trade_signal(s, trade_signals, &returns, &ts_string),
-            None => (),
-        };
-    }
-}
-
-/// Update merge trade signal
-fn update_merge_trade_signal(
-    trade_signal: &TradeSignal,
-    trade_signals: &mut BTreeMap<String, TradeSignal>,
-    returns: &BTreeMap<String, Return>,
-    ts_string: &String,
-) {
-    match returns.get(ts_string) {
-        Some(ret) => {
-            let t = trade_signal.clone();
-            let updated = TradeSignal { ret: ret.ret, ..t };
-            trade_signals.insert(ts_string.clone(), updated);
-        }
-        None => (),
-    };
-}
-
-// Calculate hard signal and pnl
-fn calc_pnl(trade_signals: &mut BTreeMap<String, TradeSignal>, chromosome: Chromosome) {
-    let local = trade_signals.clone();
-    for trade_signal in &local {
-        let mut s = trade_signal.1.clone();
-        let agg_signal: i32 = s.signals.iter().sum();
-        if chromosome.chromosome_length == agg_signal {
-            s.hard_signal = 1;
-            s.pnl = s.ret * 1.0;
-        }
-        trade_signals.insert(trade_signal.0.clone(), s);
-    }
-}
-
-// Calculate mean
-fn mean_return(signaled_trades: &Vec<TradeSignal>) -> f32 {
-    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
-    if signaled_trades.len() > 0 {
-        let mean_return: f32 = cum_pnl / signaled_trades.len() as f32;
-        return mean_return;
-    };
-    return 0.0 as f32;
-}
-
-// Calculate variance
-fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
-    if signaled_trades.len() > 0 {
-        let mean = mean_return(&signaled_trades);
-        let diffs: Vec<f32> = signaled_trades
-            .iter()
-            .map(|x| (x.pnl - mean).powi(2) as f32)
-            .collect();
-        let sum_diffs: f32 = diffs.iter().sum();
-        let v: f32 = sum_diffs / signaled_trades.len() as f32;
-        return v;
-    }
-    0.0
-}
-
-/// Calculate kelly
-fn kelly(mean: f32, variance: f32) -> f32 {
-    if variance > 0.0 {
-        return mean / variance;
-    }
-    return 0.0;
-}
-
-// Update chromsome with summary data
-fn update_chromosome(
-    chromosome: Chromosome,
-    trade_signals: BTreeMap<String, TradeSignal>,
-) -> Chromosome {
-    let mut updated_chromosome = chromosome.clone();
-    let total_trade_signals = &trade_signals.len();
-    let signaled_trades: Vec<TradeSignal> = trade_signals
-        .into_iter()
-        .map(|x| x.1)
-        .filter(|signal| signal.hard_signal == 1)
-        .collect();
-    // Calculate pnl
-    let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
-    let mean_return = mean_return(&signaled_trades);
-    let variance = variance(&signaled_trades);
-    let kelly = kelly(mean_return, variance);
-    let num_of_trades = signaled_trades.len() as i32;
-    let winning_trades: i32 = winning_trades(&signaled_trades);
-    let losing_trades: i32 = losing_trades(&signaled_trades);
-    let percentage_winners: f32 = percentage_winners(winning_trades, num_of_trades);
-    // let percentage_winners: winning_trades as f32 / num_of_trades as f32;
-    // Update chromosome
-    updated_chromosome.cum_pnl = cum_pnl;
-    updated_chromosome.mean_return = mean_return;
-    updated_chromosome.variance = variance;
-    updated_chromosome.kelly = kelly;
-    updated_chromosome.num_of_trades = num_of_trades;
-    updated_chromosome.w_kelly = kelly * (num_of_trades as f32 / *total_trade_signals as f32);
-    updated_chromosome.losing_trades = losing_trades;
-    updated_chromosome.winning_trades = winning_trades;
-    updated_chromosome.percentage_winners = percentage_winners;
-    // println!("xxx chromosome: {:?}", updated_chromosome);
-    updated_chromosome
-}
-
-fn winning_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
-    let winning_trades: Vec<&TradeSignal> = signaled_trades
-        .iter()
-        .filter(|signal| signal.pnl > 0.0)
-        .collect();
-    winning_trades.len() as i32
-}
-
-fn losing_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
-    let losing_trades: Vec<&TradeSignal> = signaled_trades
-        .iter()
-        .filter(|signal| signal.pnl < 0.0)
-        .collect();
-    losing_trades.len() as i32
-}
-
-fn percentage_winners(num_winners: i32, num_of_trades: i32) -> f32 {
-    if num_of_trades < 0 {
-        return 0.0;
-    }
-    return num_winners as f32 / num_of_trades as f32;
-}
-
-// Rank chromosomes by w_kelly
-fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
+/// Rank chromosomes by w_kelly
+pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
     let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
         .into_iter()
         .filter(|c| c.num_of_trades > 100)
