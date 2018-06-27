@@ -1,10 +1,12 @@
 //! An implementation of a genetic algortihm that use grammtical evolution
 //! to find trading signals
 //!
-//! A couple highlights
-//! ==
-//! * uses btreemap to keep track of signals
-//! * concurrently processes trading signals
+//! ## Setup
+//!
+//! Set up requires you to set config `TARGET_TICKER`, `FITTEST` and `POPULATION_SIZE`
+//! * `TARGET_TICKER` - the ticker symbol of the security your looking for trading signals for
+//! * `FITTEST` - the number of fittest chromosomes to use for the pool in the next generation
+//! * `POPULATION_SIZE` - the population size of the pool
 #[macro_use]
 extern crate log;
 extern crate crossbeam_channel;
@@ -27,7 +29,7 @@ use std::thread;
 pub fn main() {
     env_logger::init();
     info!("Hello, world!");
-    // Init
+    // Init sequence
     let quotes_repo = init_quotes_repo();
     let returns = init_returns();
     repo::init_trade_signals();
@@ -37,25 +39,21 @@ pub fn main() {
     for generation in 1..4 {
         let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation);
         let chromosomes_len = *&chromosomes.len();
-        let (c_tx, c_rx) = init_chromosomes_channel();
+        let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
         let (throttle_tx, throttle_rx) = init_throttle(8);
-        // Process chromosomes and collect results in channel
-        for chromosome in chromosomes {
-            let q_clone = quotes_repo.clone();
-            let r_clone = returns.clone();
-            let chromosome_chan = c_tx.clone();
-            let throttle = throttle_rx.clone();
-            throttle_tx.send(1); // Send integer to throttle to start count the value doesn't matter
-            debug!("Throttle length: {}", throttle_rx.len());
-            thread::spawn(move || {
-                chromosome_chan
-                    .send(process_chromosome(&chromosome, q_clone, r_clone))
-                    .unwrap();
-                throttle.recv().unwrap();
-            });
-        }
-        let updated_chromosomes: Vec<Chromosome> =
-            c_rx.iter().take(chromosomes_len).map(|c| c).collect();
+        process_chromosomes(
+            chromosomes,
+            &quotes_repo,
+            &returns,
+            chromosomes_tx,
+            throttle_tx,
+            throttle_rx,
+        );
+        let updated_chromosomes: Vec<Chromosome> = chromosomes_rx
+            .iter()
+            .take(chromosomes_len)
+            .map(|c| c)
+            .collect();
         ranked_chromosomes = rank_chromosomes(updated_chromosomes);
         writer::write_chromosomes(&ranked_chromosomes);
     }
@@ -102,6 +100,7 @@ fn init_chromosomes_channel() -> (Sender<Chromosome>, Receiver<Chromosome>) {
 }
 
 /// Init throttle channel
+///
 /// The throttle limits the number of chromosomes that are processed at
 /// any given time. A key here is that the channel is bounded which
 /// blocks when the channel is full.
@@ -112,6 +111,34 @@ fn init_throttle(
     crossbeam_channel::Receiver<i32>,
 ) {
     crossbeam_channel::bounded(workers)
+}
+
+/// Process chromosomes
+///
+/// Nothing is returned. Instead chromosomes are collected after they are sent back to
+/// the chromosome receiver channel outside of the `for` loop.
+pub fn process_chromosomes(
+    chromosomes: Vec<Chromosome>,
+    quotes_repo: &HashMap<String, Vec<Quote>>,
+    returns: &BTreeMap<String, Return>,
+    chromosome_tx: Sender<Chromosome>,
+    throttle_tx: crossbeam_channel::Sender<i32>,
+    throttle_rx: crossbeam_channel::Receiver<i32>,
+) {
+    for chromosome in chromosomes {
+        let q_clone = quotes_repo.clone();
+        let r_clone = returns.clone();
+        let chromosome_chan = chromosome_tx.clone();
+        let throttle = throttle_rx.clone();
+        throttle_tx.send(1); // The value doesn't matter
+        debug!("Throttle length: {}", throttle_rx.len());
+        thread::spawn(move || {
+            chromosome_chan
+                .send(process_chromosome(&chromosome, q_clone, r_clone))
+                .unwrap();
+            throttle.recv().unwrap();
+        });
+    }
 }
 
 /// Generate signals and metadata for chromosome
@@ -139,7 +166,6 @@ pub fn process_chromosome(
 ///
 /// if fittest = 5 then the start idx = 5 and negative rank = 20 - 5 - 5 - 1 which
 /// makes the starting index 9.
-///
 /// ```
 pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
     let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
