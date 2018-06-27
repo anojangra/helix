@@ -1,5 +1,6 @@
 extern crate env_logger;
 extern crate forge;
+extern crate vger;
 #[macro_use]
 extern crate log;
 extern crate repo;
@@ -10,6 +11,7 @@ use forge::Chromosome;
 use std::fs;
 use std::fs::File;
 use std::io::{self, Write};
+use vger::TradeSignal;
 
 /// Write chromosomes to disk
 ///
@@ -49,18 +51,18 @@ pub fn write_chromosomes(chromosomes: &Vec<Chromosome>) {
 ///
 /// Formats the vector to be readable by postgresql as an array
 ///
-// fn fmt_vec_string(strings: Vec<String>) -> String {
-//     let mut strings = strings;
-//     let mut s = String::from("{");
-//     s.push_str(strings.remove(0).as_str());
-//     for string in strings {
-//         s.push_str(",");
-//         s.push_str(string.as_str());
-//     }
-//     let close_brace = "}";
-//     s.push_str(close_brace);
-//     s
-// }
+fn fmt_vec_string(strings: Vec<String>) -> String {
+    let mut strings = strings;
+    let mut s = String::from("{");
+    s.push_str(strings.remove(0).as_str());
+    for string in strings {
+        s.push_str(",");
+        s.push_str(string.as_str());
+    }
+    let close_brace = "}";
+    s.push_str(close_brace);
+    s
+}
 
 /// Format vector of i32
 ///
@@ -80,7 +82,7 @@ fn fmt_vec_dna(dna: Vec<i32>) -> String {
 }
 
 /// Write signals to disk
-pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
+pub fn write_signals(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
     log_call(chromosome);
     let (filename, mut f) = create_file(chromosome);
     for signal in signals {
@@ -91,8 +93,8 @@ pub fn call(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             s.chromosome_id,
             s.ts,
-            writer::fmt_vec_string(s.strategies.clone()),
-            writer::fmt_vec_dna(s.signals.clone()),
+            fmt_vec_string(s.strategies.clone()),
+            fmt_vec_dna(s.signals.clone()),
             s.target_ticker,
             s.hard_signal,
             s.generation,

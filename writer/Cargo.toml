@@ -12,3 +12,6 @@ path = "../forge"
 
 [dependencies.repo]
 path = "../repo"
+
+[dependencies.vger]
+path = "../vger"

@@ -6,3 +6,5 @@ authors = ["choiway <waynechoi@gmail.com>"]
 [dependencies]
 uuid = { version = "0.5", features = ["v4"] }
 rand = "0.5.1"
+log = "0.4.2"
+env_logger = "0.5.10"

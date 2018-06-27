@@ -3,4 +3,5 @@
 /forge/target
 /writer/target
 /repo/target
+/vger/target
 **/*.rs.bk

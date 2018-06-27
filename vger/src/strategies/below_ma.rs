@@ -2,7 +2,7 @@ use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
-use trade_signal::TradeSignal;
+use TradeSignal;
 
 /// Below Moving Average
 /// 

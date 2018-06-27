@@ -2,10 +2,10 @@ use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
-use trade_signal::TradeSignal;
-use window::Window;
+use TradeSignal;
+use Window;
 
-/// Above Moving Average
+/// Standard deviation above 1 sigma and less than 2 sigmas
 ///
 ///
 pub fn call(
@@ -22,19 +22,16 @@ pub fn call(
 
 fn generator(window: &Window) -> i32 {
     let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
-    // println!("close diffs: {:?}", close_diffs);
     let std_dev = strategies::std_dev(close_diffs);
-    // println!("stddev: {}", std_dev);
     let current_diff = window.current_diff();
-    // println!("current_diff: {}", current_diff);
-    if current_diff <= (-std_dev * 2.0) {
+    if current_diff < (std_dev * 2.0) && current_diff >= std_dev {
         return 1;
     }
     return 0;
 }
 
 #[test]
-fn test_std_dev_f() {
+fn test_std_dev_b() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -69,7 +66,7 @@ fn test_std_dev_f() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 99.00,
+            close: 102.00,
             volume: 1000.50,
         },
         Quote {
@@ -78,7 +75,7 @@ fn test_std_dev_f() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 94.00,
+            close: 104.00,
             volume: 1000.49,
         },
         Quote {
@@ -87,23 +84,24 @@ fn test_std_dev_f() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 93.00,
+            close: 104.25,
             volume: 1000.79,
         },
     ];
     let windows = strategies::make_window(&test_vec, 3);
-
-    // x <= -2 sigma
+    
+    // Test x = 1 sigma
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
     let signal = generator(&first_window);
     assert_eq!(1, signal);
-
-    // x < -2 sigma
+    
+    // Test x > 2 sigma
     let second_window = &windows[1];
     // println!("second_window: {:?}", second_window);
     let signal = generator(&second_window);
-    assert_eq!(1, signal);
+    assert_eq!(0, signal);
+
 
     let third_window = &windows[2];
     // println!("third window: {:?}", third_window);

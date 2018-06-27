@@ -2,10 +2,9 @@ use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies;
 use strategies::Strategy;
-use trade_signal::TradeSignal;
-use window::Window;
+use TradeSignal;
 
-/// Standard deviation above 1 sigma and less than 2 sigmas
+/// Above Moving Average
 ///
 ///
 pub fn call(
@@ -15,23 +14,22 @@ pub fn call(
 ) {
     let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
-        let signal = generator(&w);
+        let signal = above_ma(&w);
         strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn generator(window: &Window) -> i32 {
-    let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
-    let std_dev = strategies::std_dev(close_diffs);
-    let current_diff = window.current_diff();
-    if current_diff < (std_dev * 2.0) && current_diff >= std_dev {
+fn above_ma(window: &strategies::Window) -> i32 {
+    let closes: Vec<f32> = window.window.iter().map(|quote| quote.close).collect();
+    let ma = strategies::average(closes);
+    if window.current_quote.close > ma {
         return 1;
     }
     return 0;
 }
 
 #[test]
-fn test_std_dev_b() {
+fn test_above_ma() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
@@ -75,7 +73,7 @@ fn test_std_dev_b() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 104.00,
+            close: 100.00,
             volume: 1000.49,
         },
         Quote {
@@ -84,27 +82,17 @@ fn test_std_dev_b() {
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 104.25,
+            close: 99.00,
             volume: 1000.79,
         },
     ];
     let windows = strategies::make_window(&test_vec, 3);
-    
-    // Test x = 1 sigma
     let first_window = &windows[0];
     // println!("first_window: {:?}", first_window);
-    let signal = generator(&first_window);
+    let signal = above_ma(&first_window);
     assert_eq!(1, signal);
-    
-    // Test x > 2 sigma
     let second_window = &windows[1];
-    // println!("second_window: {:?}", second_window);
-    let signal = generator(&second_window);
-    assert_eq!(0, signal);
-
-
-    let third_window = &windows[2];
-    // println!("third window: {:?}", third_window);
-    let signal = generator(&third_window);
+    // println!("second_window: {:?}", first_window);
+    let signal = above_ma(&second_window);
     assert_eq!(0, signal);
 }

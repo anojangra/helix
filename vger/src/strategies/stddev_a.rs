@@ -1,11 +1,13 @@
 use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies;
-use strategies::insert_signal;
 use strategies::Strategy;
-use trade_signal::TradeSignal;
-use window::Window;
+use TradeSignal;
+use Window;
 
+/// Above Moving Average
+///
+///
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
@@ -13,39 +15,36 @@ pub fn call(
 ) {
     let windows = strategies::make_window(quotes, strategy.param as usize);
     for w in windows {
-        let signal = highest_high_value(&w);
-        insert_signal(trade_signals, &w, &strategy, &signal);
+        let signal = generator(&w);
+        strategies::insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-/// Calculate highest high in window
-///
-/// Triggers a signal is close exceeds highest high in window period
-///
-fn highest_high_value(window: &Window) -> i32 {
-    let high_values: Vec<f32> = window.window.iter().map(|quote| quote.high).collect();
-    let highest_value = high_values.iter().fold(0_f32, |acc, x| acc.max(*x));
-    if window.current_quote.close > highest_value {
+fn generator(window: &Window) -> i32 {
+    let close_diffs: Vec<f32> = strategies::diff(&window.window, 1);
+    let std_dev = strategies::std_dev(close_diffs);
+    let current_diff = window.current_diff();
+    if current_diff >= (std_dev * 2.0) {
         return 1;
     }
     return 0;
 }
 
 #[test]
-fn test_hhv() {
+fn test_std_dev_a() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
             ts: 1528745804.0,
-            open: 110.00,
-            high: 112.00,
+            open: 100.00,
+            high: 105.00,
             low: 99.00,
             close: 99.00,
             volume: 1000.20,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528746804.0,
+            ts: 1528746805.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -54,34 +53,34 @@ fn test_hhv() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528747804.0,
+            ts: 1528747806.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 99.00,
+            close: 101.00,
             volume: 999.75,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528748804.0,
+            ts: 1528748807.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 200.00,
+            close: 102.00,
             volume: 1000.50,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528749804.0,
+            ts: 1528749808.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 99.00,
+            close: 103.00,
             volume: 1000.49,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528750804.0,
+            ts: 1528750809.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -90,7 +89,19 @@ fn test_hhv() {
         },
     ];
     let windows = strategies::make_window(&test_vec, 3);
+    
     let first_window = &windows[0];
-    let signal = highest_high_value(&first_window);
+    // println!("first_window: {:?}", first_window);
+    let signal = generator(&first_window);
+    assert_eq!(0, signal);
+    
+    let second_window = &windows[1];
+    // println!("second_window: {:?}", second_window);
+    let signal = generator(&second_window);
     assert_eq!(1, signal);
+
+    let third_window = &windows[2];
+    // println!("third window: {:?}", third_window);
+    let signal = generator(&third_window);
+    assert_eq!(0, signal);
 }

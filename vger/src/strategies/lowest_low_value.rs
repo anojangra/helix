@@ -1,48 +1,48 @@
 use repo::schemas::Quote;
 use std::collections::BTreeMap;
-use strategies;
+use strategies::insert_signal;
+use strategies::make_window;
 use strategies::Strategy;
-use trade_signal::TradeSignal;
+use TradeSignal;
+use Window;
 
-/// Above Moving Average
-///
-///
 pub fn call(
     strategy: Strategy,
     trade_signals: &mut BTreeMap<String, TradeSignal>,
     quotes: &Vec<Quote>,
 ) {
-    let windows = strategies::make_window(quotes, strategy.param as usize);
+    let windows = make_window(quotes, strategy.param as usize);
     for w in windows {
-        let signal = above_ma(&w);
-        strategies::insert_signal(trade_signals, &w, &strategy, &signal);
+        let signal = lowest_low_value(&w);
+        insert_signal(trade_signals, &w, &strategy, &signal);
     }
 }
 
-fn above_ma(window: &strategies::Window) -> i32 {
-    let closes: Vec<f32> = window.window.iter().map(|quote| quote.close).collect();
-    let ma = strategies::average(closes);
-    if window.current_quote.close > ma {
+// Calculate lowest low in window
+fn lowest_low_value(window: &Window) -> i32 {
+    let low_values: Vec<f32> = window.window.iter().map(|quote| quote.low).collect();
+    let lowest_value = low_values.iter().fold(0_f32, |acc, x| acc.min(*x));
+    if window.current_quote.close < lowest_value {
         return 1;
     }
     return 0;
 }
 
 #[test]
-fn test_above_ma() {
+fn test_llv() {
     let test_vec = vec![
         Quote {
             ticker: "AAPL".to_string(),
             ts: 1528745804.0,
-            open: 100.00,
-            high: 105.00,
+            open: 110.00,
+            high: 112.00,
             low: 99.00,
             close: 99.00,
             volume: 1000.20,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528746805.0,
+            ts: 1528746804.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -51,34 +51,34 @@ fn test_above_ma() {
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528747806.0,
+            ts: 1528747804.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 101.00,
+            close: 99.00,
             volume: 999.75,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528748807.0,
+            ts: 1528748804.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 102.00,
+            close: 200.00,
             volume: 1000.50,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528749808.0,
+            ts: 1528749804.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
-            close: 100.00,
+            close: 99.00,
             volume: 1000.49,
         },
         Quote {
             ticker: "AAPL".to_string(),
-            ts: 1528750809.0,
+            ts: 1528750804.0,
             open: 100.00,
             high: 105.00,
             low: 99.00,
@@ -86,13 +86,8 @@ fn test_above_ma() {
             volume: 1000.79,
         },
     ];
-    let windows = strategies::make_window(&test_vec, 3);
+    let windows = make_window(&test_vec, 3);
     let first_window = &windows[0];
-    // println!("first_window: {:?}", first_window);
-    let signal = above_ma(&first_window);
-    assert_eq!(1, signal);
-    let second_window = &windows[1];
-    // println!("second_window: {:?}", first_window);
-    let signal = above_ma(&second_window);
+    let signal = lowest_low_value(&first_window);
     assert_eq!(0, signal);
 }

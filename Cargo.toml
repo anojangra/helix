@@ -21,3 +21,6 @@ path = "./writer"
 
 [dependencies.repo]
 path = "./repo"
+
+[dependencies.vger]
+path = "./vger"

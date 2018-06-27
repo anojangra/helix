@@ -1,10 +1,10 @@
 use forge::Chromosome;
 use repo::schemas::Quote;
 use std::collections::BTreeMap;
-use trade_signal;
-use trade_signal::TradeSignal;
+use TradeSignal;
 use uuid::Uuid;
-use window::Window;
+use Window;
+use init_trade_signal;
 
 pub mod above_ma;
 pub mod below_ma;
@@ -93,7 +93,7 @@ fn insert_signal(
     let ts_string = window.current_quote.ts.to_string();
     let trade_signal = match trade_signals.get(&ts_string) {
         Some(s) => update_signal(s, strategy, signal),
-        None => trade_signal::init_trade_signal(strategy, &window, signal),
+        None => init_trade_signal(strategy, &window, signal),
     };
     trade_signals.insert(ts_string, trade_signal);
 }

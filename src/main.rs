@@ -13,13 +13,10 @@ extern crate rand;
 extern crate repo;
 extern crate threadpool;
 extern crate uuid;
+extern crate vger;
+extern crate writer;
 
 mod config;
-mod darwin;
-mod strategies;
-mod trade_signal;
-mod window;
-mod writer;
 
 use forge::Chromosome;
 use repo::schemas::Quote;
@@ -28,8 +25,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::mpsc::channel;
 use std::thread;
-use strategies::Strategy;
-use trade_signal::TradeSignal;
+use vger::TradeSignal;
 
 fn main() {
     env_logger::init();
@@ -46,7 +42,7 @@ fn main() {
         if i == 1 {
             chromosomes = forge::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
         } else {
-            chromosomes = darwin::evolve(ranked_chromosomes, i);
+            chromosomes = forge::evolve(ranked_chromosomes, i);
         }
         let c_len = *&chromosomes.len();
         let (c_tx, c_rx) = channel();
@@ -66,7 +62,7 @@ fn main() {
         }
         let updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
         ranked_chromosomes = rank_chromosomes(updated_chromosomes);
-        writer::write_chromosomes::call(&ranked_chromosomes);
+        writer::write_chromosomes(&ranked_chromosomes);
     }
     info!("So long and thanks for all the fish!");
 }
@@ -102,7 +98,7 @@ fn process_chromosome(
     let mut trade_signals = generate_signals(&chromosome, quotes_repo);
     merge_returns(&mut trade_signals, &returns);
     calc_pnl(&mut trade_signals, chromosome.clone());
-    writer::write_signals::call(&trade_signals, &chromosome);
+    writer::write_signals(&trade_signals, &chromosome);
     update_chromosome(chromosome.clone(), trade_signals)
 }
 
@@ -115,11 +111,11 @@ fn generate_signals(
     quotes_repo: HashMap<String, Vec<Quote>>,
 ) -> BTreeMap<String, TradeSignal> {
     let mut trade_signals: BTreeMap<String, TradeSignal> = BTreeMap::new();
-    let strategies = strategies::expand_strategies(chromosome.clone());
+    let strategies = vger::strategies::expand_strategies(chromosome.clone());
     for strategy in strategies {
         match quotes_repo.get(&strategy.ticker) {
             Some(quotes) => {
-                generate_strategy_signals(strategy, &mut trade_signals, quotes);
+                vger::generate_strategy_signals(strategy, &mut trade_signals, quotes);
             }
             None => panic!("this is a terrible mistake!"),
         };
@@ -204,29 +200,6 @@ fn kelly(mean: f32, variance: f32) -> f32 {
         return mean / variance;
     }
     return 0.0;
-}
-
-/// Generate strategy signals
-fn generate_strategy_signals(
-    strategy: Strategy,
-    trade_signals: &mut BTreeMap<String, TradeSignal>,
-    quotes: &Vec<Quote>,
-) {
-    match strategy.code.as_ref() {
-        "llv" => strategies::lowest_low_value::call(strategy, trade_signals, quotes),
-        "hhv" => strategies::highest_high_value::call(strategy, trade_signals, quotes),
-        "conupdays" => strategies::con_up_days::call(strategy, trade_signals, quotes),
-        "condowndays" => strategies::con_down_days::call(strategy, trade_signals, quotes),
-        "gapup" => strategies::gap_up_days::call(strategy, trade_signals, quotes),
-        "gapdown" => strategies::gap_down_days::call(strategy, trade_signals, quotes),
-        "belowma" => strategies::below_ma::call(strategy, trade_signals, quotes),
-        "abovema" => strategies::above_ma::call(strategy, trade_signals, quotes),
-        "stdeva" => strategies::stddev_a::call(strategy, trade_signals, quotes),
-        "stdevb" => strategies::stddev_b::call(strategy, trade_signals, quotes),
-        "stdevd" => strategies::stddev_d::call(strategy, trade_signals, quotes),
-        "stdevf" => strategies::stddev_f::call(strategy, trade_signals, quotes),
-        _ => panic!("No such strategy"),
-    };
 }
 
 // Update chromsome with summary data
