@@ -1,3 +1,7 @@
+//! Above moving average
+//! 
+//! A signal occurs when the current prices is above the moving average of length
+//! param
 use repo::schemas::Quote;
 use std::collections::BTreeMap;
 use strategies;

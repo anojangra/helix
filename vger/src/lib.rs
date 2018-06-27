@@ -1,3 +1,5 @@
+//! Processes the chromosomes and generates signals from strategies
+//!
 extern crate uuid;
 #[macro_use]
 extern crate log;
@@ -15,7 +17,6 @@ use uuid::Uuid;
 /// Trading strategies
 pub mod strategies;
 
-
 /// Struct for grouping daily trade signal data
 #[derive(Debug, Clone)]
 pub struct TradeSignal {
@@ -31,7 +32,6 @@ pub struct TradeSignal {
 }
 
 /// Initializes empty trade signal
-///
 pub fn init_trade_signal(strategy: &Strategy, window: &Window, signal: &i32) -> TradeSignal {
     let strategies = vec![strategy.strategy.clone()];
     let signals = vec![*signal];
@@ -48,21 +48,26 @@ pub fn init_trade_signal(strategy: &Strategy, window: &Window, signal: &i32) -> 
     }
 }
 
+/// A window of `Quotes` of length n where `t^n < t^0` and the current quote at `t^0`
 #[derive(Debug, Clone)]
 pub struct Window {
+    /// window of quotes
     pub window: Vec<Quote>,
+
+    /// quote at `t^0`
     pub current_quote: Quote,
 }
 
 impl Window {
+    /// Calculates diff of current close and previous close
     pub fn current_diff(&self) -> f32 {
         let end_idx = self.window.len() - 1;
         let end_window_quote = &self.window[end_idx.clone()];
         self.current_quote.close - end_window_quote.close
     }
 
-    // Takes the lagged window of quotes and the current window and creates a
-    // a single vector of quote
+    /// Takes the lagged window of quotes and the current window and creates a
+    /// a single vector of quote
     pub fn flatten(&self) -> Vec<Quote> {
         let mut w = self.window.clone();
         w.push(self.current_quote.clone());
@@ -93,10 +98,7 @@ pub fn generate_strategy_signals(
     };
 }
 
-/// Run strategy
-///
-/// Splits chromosome to strategies
-///
+/// Generate signals from chromosome
 pub fn generate_signals(
     chromosome: &Chromosome,
     quotes_repo: HashMap<String, Vec<Quote>>,
@@ -170,7 +172,7 @@ pub fn mean_return(signaled_trades: &Vec<TradeSignal>) -> f32 {
     return 0.0 as f32;
 }
 
-// Calculate variance
+/// Calculates variance
 pub fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
     if signaled_trades.len() > 0 {
         let mean = mean_return(&signaled_trades);
@@ -185,7 +187,7 @@ pub fn variance(signaled_trades: &Vec<TradeSignal>) -> f32 {
     0.0
 }
 
-/// Calculate kelly
+/// Calculates kelly ratio
 pub fn kelly(mean: f32, variance: f32) -> f32 {
     if variance > 0.0 {
         return mean / variance;
@@ -193,7 +195,7 @@ pub fn kelly(mean: f32, variance: f32) -> f32 {
     return 0.0;
 }
 
-/// Update chromsome with summary data
+/// Updates chromsome with summary data
 pub fn update_chromosome(
     chromosome: Chromosome,
     trade_signals: BTreeMap<String, TradeSignal>,
@@ -205,7 +207,8 @@ pub fn update_chromosome(
         .map(|x| x.1)
         .filter(|signal| signal.hard_signal == 1)
         .collect();
-    // Calculate pnl
+
+    // Calculate summary data
     let cum_pnl: f32 = signaled_trades.iter().map(|x| x.pnl).sum();
     let mean_return = mean_return(&signaled_trades);
     let variance = variance(&signaled_trades);
@@ -214,7 +217,7 @@ pub fn update_chromosome(
     let winning_trades: i32 = winning_trades(&signaled_trades);
     let losing_trades: i32 = losing_trades(&signaled_trades);
     let percentage_winners: f32 = percentage_winners(winning_trades, num_of_trades);
-    // let percentage_winners: winning_trades as f32 / num_of_trades as f32;
+
     // Update chromosome
     updated_chromosome.cum_pnl = cum_pnl;
     updated_chromosome.mean_return = mean_return;
@@ -225,11 +228,12 @@ pub fn update_chromosome(
     updated_chromosome.losing_trades = losing_trades;
     updated_chromosome.winning_trades = winning_trades;
     updated_chromosome.percentage_winners = percentage_winners;
+
     // println!("xxx chromosome: {:?}", updated_chromosome);
     updated_chromosome
 }
 
-/// Calculate winning trades
+/// Calculates winning trades
 pub fn winning_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
     let winning_trades: Vec<&TradeSignal> = signaled_trades
         .iter()
@@ -238,7 +242,7 @@ pub fn winning_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
     winning_trades.len() as i32
 }
 
-/// Calculate losing trades
+/// Calculates losing trades
 pub fn losing_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
     let losing_trades: Vec<&TradeSignal> = signaled_trades
         .iter()
@@ -247,7 +251,9 @@ pub fn losing_trades(signaled_trades: &Vec<TradeSignal>) -> i32 {
     losing_trades.len() as i32
 }
 
-/// Percentage winners
+/// Calculates percentage winners
+///
+/// Percentage winners is calculated as winners over total trades
 pub fn percentage_winners(num_winners: i32, num_of_trades: i32) -> f32 {
     if num_of_trades < 0 {
         return 0.0;

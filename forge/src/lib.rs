@@ -1,4 +1,4 @@
-//! # Forge where
+//! Crate with structs and methods to manage the evolutionary process
 //!
 //! Where does the rest of this go?
 //!
@@ -10,7 +10,6 @@ extern crate env_logger;
 
 use rand::prelude::*;
 use uuid::Uuid;
-
 
 mod config;
 
@@ -70,6 +69,9 @@ pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Ve
     chromosomes
 }
 
+/// Decodes dna
+/// 
+/// Takes the array of i32 in Dna and decodes grammar
 pub fn decode_dna(code: String, dna: &Dna) -> String {
     let mut code = code;
     for base in dna {
@@ -81,6 +83,8 @@ pub fn decode_dna(code: String, dna: &Dna) -> String {
 
 /// Expands dna to code
 ///
+/// Takes the current state of the grammar and the integer from Dna and 
+/// replaces the keys words until we get through the array
 fn expand_code(code: String, base: &i32) -> String {
     if code.contains("<ticker>") {
         let index = base % config::tickers_length();
@@ -101,10 +105,11 @@ fn expand_code(code: String, base: &i32) -> String {
 }
 
 /// Dna type
+/// 
 /// The Dna type is alias for a vector of i32
 pub type Dna = Vec<i32>;
 
-/// Generates qty dnas of length len
+/// Generates a population dnas of length `len`
 pub fn generate_dnas(len: i32, qty: i32) -> Vec<Dna> {
     let mut dnas: Vec<Dna> = vec![];
     for _i in 0..qty {
@@ -125,6 +130,11 @@ fn generate_dna(len: i32) -> Dna {
     dna
 }
 
+/// evolve chromosomes
+/// 
+/// When evolving chromsomes we take the fittest 500 chromosomes and generate a pool
+/// of ranked chromosomes. Better chromosomes are more frequest in the pool. Based on the
+/// desired size of the new population we pull two randome dnas and have them mate.
 pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chromosome> {
     let start = &ranked_chromosomes.len() - config::FITTEST;
     let fittest_chromosomes = &ranked_chromosomes[start..];
@@ -190,7 +200,7 @@ fn mutate_dna(dna: Dna) -> Dna {
     mutated_dna
 }
 
-// Either increments or decrements base by 1
+// Randomly either increments or decrements base by 1
 fn mutate_base(base: i32) -> i32 {
     if rand::random() {
         return floor(base + 1);

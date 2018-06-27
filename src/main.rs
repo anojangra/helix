@@ -24,14 +24,17 @@ use std::thread;
 pub fn main() {
     env_logger::init();
     info!("Hello, world!");
+    // Init
     let quotes_repo = init_quotes_repo();
     let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     let returns = init_returns();
     repo::init_trade_signals();
     repo::init_chromosomes();
     let mut ranked_chromosomes: Vec<Chromosome> = vec![];
+    // Run generations
     for i in 1..4 {
         warn!("Running generation: {}", i);
+        // Generate or evolve chromosomes
         let mut chromosomes: Vec<Chromosome> = vec![];
         if i == 1 {
             chromosomes = forge::generate_chromosomes(dnas.clone(), i, config::TARGET_TICKER)
@@ -39,13 +42,19 @@ pub fn main() {
             chromosomes = forge::evolve(ranked_chromosomes, i);
         }
         let c_len = *&chromosomes.len();
+        // Init channel to collect updated chromosomes
         let (c_tx, c_rx) = channel();
+        // Init throttle
+        // The throttle limits the number of chromosomes that are processed at 
+        // any given time
         let (throttle_tx, throttle_rx) = crossbeam_channel::bounded(8);
+        // Process chromosomes and collect results in channel
         for chromosome in chromosomes {
             let q_clone = quotes_repo.clone();
             let r_clone = returns.clone();
             let tx_n = c_tx.clone();
             let t_rx = throttle_rx.clone();
+            // Send integer to throttle to start count
             throttle_tx.send(1);
             debug!("Throttle length: {}", throttle_rx.len());
             thread::spawn(move || {
@@ -54,6 +63,7 @@ pub fn main() {
                 t_rx.recv().unwrap();
             });
         }
+
         let updated_chromosomes: Vec<Chromosome> = c_rx.iter().take(c_len).map(|c| c).collect();
         ranked_chromosomes = rank_chromosomes(updated_chromosomes);
         writer::write_chromosomes(&ranked_chromosomes);

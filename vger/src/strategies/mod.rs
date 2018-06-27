@@ -7,14 +7,23 @@ use Window;
 use init_trade_signal;
 
 pub mod above_ma;
+/// signal occurs when price is below moving average
 pub mod below_ma;
+/// consecutive down days
 pub mod con_down_days;
+/// consecutive up days
 pub mod con_up_days;
+/// gap down days
 pub mod gap_down_days;
+/// gap up days
 pub mod gap_up_days;
+/// highest high value
 pub mod highest_high_value;
+/// lowest low value
 pub mod lowest_low_value;
+/// diff > 2 sigma
 pub mod stddev_a;
+/// +2 sigma > diff > +1 sigma
 pub mod stddev_b;
 pub mod stddev_d;
 pub mod stddev_f;
@@ -23,6 +32,7 @@ pub mod stddev_f;
 /// cross above ma
 /// cross below ma
 
+/// A chromosome expands into a `Strategy` struct
 #[derive(Debug, Clone)]
 pub struct Strategy {
     pub chromosome_id: Uuid,
@@ -42,6 +52,7 @@ pub struct Lag {
 
 /// Expands chromosome of strategies to a list of strategies
 ///
+/// ```
 /// "llv:AAPL:2::gapupday:GOOG:10"
 ///
 /// Returns
@@ -57,7 +68,7 @@ pub struct Lag {
 ///         param: 10
 ///     }
 /// ]
-///
+/// ```
 pub fn expand_strategies(chromosome: Chromosome) -> Vec<Strategy> {
     let strategies: Vec<&str> = chromosome.chromosome.split("::").collect();
     let expanded_strategies = strategies
@@ -118,11 +129,6 @@ fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) 
 }
 
 /// Cast windows from list of quotes
-///
-/// A window is x quotes prior to the current quote
-///
-/// returns tuple: (array of windows, current_quote)
-///
 fn make_window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
     let mut windows: Vec<Window> = vec![];
     for n in length..quotes.len() {

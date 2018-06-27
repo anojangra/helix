@@ -1,3 +1,6 @@
+//! Manages interactions with the database
+//! 
+//! Acts as wrapper for database operations and sql statements
 extern crate postgres;
 #[macro_use]
 extern crate log;
@@ -6,7 +9,9 @@ extern crate env_logger;
 extern crate forge;
 extern crate uuid;
 
+/// structs that map to db tables
 pub mod schemas;
+/// test sql statements
 pub mod sql;
 
 use forge::Chromosome;
@@ -15,6 +20,7 @@ use schemas::Ticker;
 use schemas::Return;
 use schemas::Quote;
 
+/// Provides connection to database
 pub fn connect() -> Connection {
     Connection::connect(
         "postgres://hugo:InRainbows@localhost:5432/hugo",
@@ -93,12 +99,14 @@ pub fn insert_chromosome(c: Chromosome) {
     ).unwrap();
 }
 
+/// Copy csv of signals to db
 pub fn copy_signals(filename: &String) {
     let conn = connect();
     let sql = format!("COPY trade_signals FROM '{}';", filename);
     conn.execute(&sql, &[]).unwrap();
 }
 
+/// Get quotes for ticker symbol
 pub fn get_quotes_by_symbol(ticker: &String) -> Vec<Quote> {
     let conn = connect();
     let rows = &conn.query(sql::get_quotes_by_symbol(), &[&ticker]).unwrap();
@@ -121,7 +129,6 @@ pub fn get_quotes_by_symbol(ticker: &String) -> Vec<Quote> {
 }
 
 /// Get returns
-///
 pub fn get_returns(ticker: String) -> Vec<Return> {
     let conn = connect();
     let rows = &conn.query(sql::get_returns(), &[&ticker]).unwrap();

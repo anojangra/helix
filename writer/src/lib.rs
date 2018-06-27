@@ -1,3 +1,5 @@
+//! Module to write objects to disk
+
 extern crate env_logger;
 extern crate forge;
 extern crate vger;
@@ -15,6 +17,13 @@ use vger::TradeSignal;
 
 /// Write chromosomes to disk
 ///
+/// Writes chromosomes to disk as a tab delimited csv
+/// 
+/// # Usage
+/// ```
+/// use writer;
+/// writer::write_chromosomes(&ranked_chromosomes);
+/// ```
 pub fn write_chromosomes(chromosomes: &Vec<Chromosome>) {
     debug!("writing chromsosome to disk");
     print!("#\n");
@@ -50,7 +59,6 @@ pub fn write_chromosomes(chromosomes: &Vec<Chromosome>) {
 /// Format vector of String
 ///
 /// Formats the vector to be readable by postgresql as an array
-///
 fn fmt_vec_string(strings: Vec<String>) -> String {
     let mut strings = strings;
     let mut s = String::from("{");
@@ -67,7 +75,6 @@ fn fmt_vec_string(strings: Vec<String>) -> String {
 /// Format vector of i32
 ///
 /// Formats the vector to be readable by postgresql as an array
-///
 fn fmt_vec_dna(dna: Vec<i32>) -> String {
     let mut dna = dna;
     let mut s = String::from("{");
@@ -83,7 +90,7 @@ fn fmt_vec_dna(dna: Vec<i32>) -> String {
 
 /// Write signals to disk
 pub fn write_signals(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chromosome) {
-    log_call(chromosome);
+    log_write_signals(chromosome);
     let (filename, mut f) = create_file(chromosome);
     for signal in signals {
         let s = signal.1;
@@ -106,12 +113,13 @@ pub fn write_signals(signals: &BTreeMap<String, TradeSignal>, chromosome: &Chrom
     fs::remove_file(filename).unwrap();
 }
 
-fn log_call(chromosome: &Chromosome) {
-    debug!("writing id: {} to disk", chromosome.id);
+fn log_write_signals(chromosome: &Chromosome) {
+    debug!("writing signal with id: {} to disk", chromosome.id);
     print!(".");
     io::stdout().flush().unwrap();
 }
 
+/// Create temp file for signals
 fn create_file(chromosome: &Chromosome) -> (String, File) {
     let filename = format!("/tmp/{}.txt", chromosome.id);
     let file = File::create(&filename).expect("Unable to create file");
