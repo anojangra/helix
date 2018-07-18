@@ -1,3 +1,5 @@
+CREATE SCHEMA helix;
+
 DROP TABLE IF EXISTS trade_signals;
 CREATE TABLE trade_signals (
     chromosome_id uuid

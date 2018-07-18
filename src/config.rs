@@ -1,4 +1,4 @@
-pub static TARGET_TICKER: &str = "krakenUSD";
+pub static TARGET_TICKER: &str = "SPY";
 
 // The number of fittest chromosomes to evolve
 pub static FITTEST: usize = 500;

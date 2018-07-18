@@ -8,9 +8,9 @@ pub fn get_quotes_by_symbol() -> &'static str {
        low::REAL,
        close::REAL,
        volume::REAL
-    FROM btcc.hourly 
+    FROM av_quotes 
     WHERE ticker = $1 
-    AND ts >= '2016-01-01'
+    AND ts >= '2000-01-01'
     ORDER BY ts;"
 }
 
@@ -21,9 +21,9 @@ pub fn get_returns() -> &'static str {
     SELECT
       EXTRACT(epoch FROM ts) AS ts
     , (LEAD(close::real, 1) OVER (ORDER BY ts) - close::real) / close::real AS ret
-    FROM btcc.hourly
+    FROM av_quotes
     WHERE ticker = $1
-    AND ts >= '2016-01-01'
+    AND ts >= '2000-01-01'
     ) a
     WHERE ret IS NOT NULL
     ORDER BY ts;
@@ -33,7 +33,7 @@ pub fn get_returns() -> &'static str {
 /// sql for getting tickers
 pub fn get_tickers() -> &'static str {
   "SELECT ticker
-    FROM btcc.hourly
+    FROM av_quotes
     GROUP BY ticker;"
 }
 
