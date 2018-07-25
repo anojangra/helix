@@ -110,7 +110,7 @@ pub fn generate_signals(
             Some(quotes) => {
                 generate_strategy_signals(strategy, &mut trade_signals, quotes);
             }
-            None => panic!("No such quote in config!"),
+            None => panic!("No quotes for strategy {:?}", strategy),
         };
     }
     trade_signals
