@@ -42,15 +42,13 @@ pub static TICKERS: [&str; 505] = [
 	"XEL", "XRX", "XLNX", "XL", "XYL", "YUM", "ZBH", "ZION", "ZTS", "SPY",
 ];
 
-pub static STRATEGIES: [&str; 12] = [
+pub static STRATEGIES: [&str; 10] = [
 	"hhv:<ticker>:<param>",
 	"llv:<ticker>:<param>",
 	"conupdays:<ticker>:<param>",
 	"condowndays:<ticker>:<param>",
 	"gapup:<ticker>:<param>",
 	"gapdown:<ticker>:<param>",
-	"abovema:<ticker>:<param>",
-	"belowma:<ticker>:<param>",
 	"stdeva:<ticker>:<param>",
 	"stdevb:<ticker>:<param>",
 	"stdevd:<ticker>:<param>",

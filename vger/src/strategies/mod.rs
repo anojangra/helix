@@ -129,6 +129,7 @@ fn update_signal(trade_signal: &TradeSignal, strategy: &Strategy, signal: &i32) 
 }
 
 /// Cast windows from list of quotes
+/// A window include quotes of length n prior to the current quote
 fn make_window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
     let mut windows: Vec<Window> = vec![];
     for n in length..quotes.len() {
