@@ -1,4 +1,3 @@
-/// sql for getting quotes by symbol
 pub fn get_quotes_by_symbol() -> &'static str {
   "SELECT
        ticker,
@@ -14,7 +13,6 @@ pub fn get_quotes_by_symbol() -> &'static str {
     ORDER BY ts;"
 }
 
-/// sql for getting returns
 pub fn get_returns() -> &'static str {
   " SELECT * FROM
     (
@@ -30,7 +28,6 @@ pub fn get_returns() -> &'static str {
   "
 }
 
-/// sql for getting tickers
 pub fn get_tickers() -> &'static str {
   "SELECT ticker
     FROM av_quotes
@@ -38,9 +35,9 @@ pub fn get_tickers() -> &'static str {
 }
 
 /// Insert chromosome sql
-/// 
+///
 /// ## Params
-/// 
+///
 /// ```
 /// id: $1
 /// ticker: $2
