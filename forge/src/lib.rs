@@ -50,7 +50,7 @@ pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Ve
   let mut chromosomes: Vec<Chromosome> = vec![];
   let tickers = open_tickers("test_tickers.txt");
   for dna in dnas {
-    let strategies = decode_dna("<code>".to_string(), &dna);
+    let strategies = decode_dna("<code>".to_string(), &dna, &tickers);
     let strategies_vec: &Vec<&str> = &strategies.split("::").collect();
     let chromosome = Chromosome {
       id: uuid::Uuid::new_v4(),
@@ -89,10 +89,10 @@ fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
 /// Decodes dna
 ///
 /// Takes the array of i32 in Dna and decodes grammar
-pub fn decode_dna(code: String, dna: &Dna) -> String {
+pub fn decode_dna(code: String, dna: &Dna, tickers: &Vec<String>) -> String {
   let mut code = code;
   for base in dna {
-    code = expand_code(code, base);
+    code = expand_code(code, base, tickers);
   }
   code = code.replace("::<code>", "");
   code
@@ -102,7 +102,7 @@ pub fn decode_dna(code: String, dna: &Dna) -> String {
 ///
 /// Takes the current state of the grammar and the integer from Dna and
 /// replaces the keys words until we get through the array
-fn expand_code(code: String, base: &i32, tickers:Vec<String>) -> String {
+fn expand_code(code: String, base: &i32, tickers: &Vec<String>) -> String {
   if code.contains("<ticker>") {
     let index = base % tickers.len() as i32;
     return code.replace("<ticker>", &tickers[index as usize]);
