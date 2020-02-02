@@ -138,14 +138,14 @@ pub fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
 /// Initializes hashmap for quotes
 ///
 /// The quotes repo
-fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
+fn init_quotes_repo(tickers: &Vec<String>, ticker_path: &str) -> HashMap<String, Vec<Quote>> {
   debug!("Initializing quotes repo");
 
   let mut repo = HashMap::new();
 
   for ticker in repo::get_tickers() {
     debug!("{:?}", ticker);
-    let quotes = repo::get_quotes_by_symbol(&ticker.symbol);
+    let quotes = repo::get_quotes_by_symbol(&ticker.symbol, ticker_path);
     repo.insert(ticker.symbol, quotes);
   }
 

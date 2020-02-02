@@ -3,6 +3,7 @@ name = "repo"
 version = "0.1.0"
 authors = ["choiway <waynechoi@gmail.com>"]
 
+
 [dependencies]
 postgres = { version = "0.15", features = ["with-uuid", "with-time"]}
 uuid = { version = "0.5", features = ["v4"] }
@@ -10,6 +11,8 @@ rand = "0.5.1"
 chrono = "0.4"
 log = "0.4.2"
 env_logger = "0.5.10"
+csv = "1.1"
+serde = { version = "1", features = ["derive"] }
 
 [dependencies.forge]
 path = "../forge"
