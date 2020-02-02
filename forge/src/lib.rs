@@ -45,10 +45,10 @@ pub struct Chromosome {
 /// ```
 ///
 /// ```
-pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str) -> Vec<Chromosome> {
+pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str, tickers_path: &str) -> Vec<Chromosome> {
   // debug!("generate chromosomes");
   let mut chromosomes: Vec<Chromosome> = vec![];
-  let tickers = open_tickers("test_tickers.txt");
+  let tickers = open_tickers(tickers_path);
   for dna in dnas {
     let strategies = decode_dna("<code>".to_string(), &dna, &tickers);
     let strategies_vec: &Vec<&str> = &strategies.split("::").collect();
