@@ -75,76 +75,95 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use std::{
+  fs::File,
+  io::{prelude::*, BufReader},
+  path::Path,
+};
 
 pub fn main() {
-    env_logger::init();
-    info!("Hello, world!");
+  env_logger::init();
+  info!("Hello, world!");
 
-    // Init sequence
-    let quotes_repo = init_quotes_repo();
-    let mut completed_chromosomes = init_completed_chromosomes();
-    let returns = init_returns();
-    repo::init_trade_signals();
-    repo::init_chromosomes();
-    let mut ranked_chromosomes: Vec<Chromosome> = vec![];
+  // Init sequence
+  let tickers = open_tickers("/home/choiway/data/spx_data_relix/test_tickers.txt");
+  let quotes_repo = init_quotes_repo();
+  let mut completed_chromosomes = init_completed_chromosomes();
+  let returns = init_returns();
+  repo::init_trade_signals();
+  repo::init_chromosomes();
+  let mut ranked_chromosomes: Vec<Chromosome> = vec![];
 
-    // Run generations
-    for generation in 1..4 {
-        let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation);
-        let chromosomes_len = *&chromosomes.len();
-        let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
-        let (throttle_tx, throttle_rx) = init_throttle(8);
-        // Check completed chromosomes
-        process_chromosomes(
-            chromosomes,
-            &mut completed_chromosomes,
-            &quotes_repo,
-            &returns,
-            chromosomes_tx,
-            throttle_tx,
-            throttle_rx,
-        );
+  // Run generations
+  for generation in 1..4 {
+    let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers);
+    let chromosomes_len = *&chromosomes.len();
+    let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
+    let (throttle_tx, throttle_rx) = init_throttle(8);
+    // Check completed chromosomes
+    process_chromosomes(
+      chromosomes,
+      &mut completed_chromosomes,
+      &quotes_repo,
+      &returns,
+      chromosomes_tx,
+      throttle_tx,
+      throttle_rx,
+    );
 
-        let updated_chromosomes: Vec<Chromosome> = chromosomes_rx
-            .iter()
-            .take(chromosomes_len)
-            .map(|c| c)
-            .collect();
+    let updated_chromosomes: Vec<Chromosome> = chromosomes_rx
+      .iter()
+      .take(chromosomes_len)
+      .map(|c| c)
+      .collect();
 
-        ranked_chromosomes = rank_chromosomes(updated_chromosomes);
-        writer::write_chromosomes(&ranked_chromosomes);
-    }
+    ranked_chromosomes = rank_chromosomes(updated_chromosomes);
+    writer::write_chromosomes(&ranked_chromosomes);
+  }
 
-    info!("So long and thanks for all the fish!");
+  info!("So long and thanks for all the fish!");
+}
+
+// Opens the tickers file and returns a vector of the tickers
+// as strings
+pub fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
+  let file = File::open(filename).expect("no such file");
+  let buf = BufReader::new(file);
+  buf
+    .lines()
+    .map(|l| l.expect("Could not parse line"))
+    .collect()
 }
 
 /// Initializes hashmap for quotes
+///
+/// The quotes repo
 fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
-    debug!("Initializing quotes repo");
+  debug!("Initializing quotes repo");
 
-    let mut repo = HashMap::new();
+  let mut repo = HashMap::new();
 
-    for ticker in repo::get_tickers() {
-        debug!("{:?}", ticker);
-        let quotes = repo::get_quotes_by_symbol(&ticker.symbol);
-        repo.insert(ticker.symbol, quotes);
-    }
+  for ticker in repo::get_tickers() {
+    debug!("{:?}", ticker);
+    let quotes = repo::get_quotes_by_symbol(&ticker.symbol);
+    repo.insert(ticker.symbol, quotes);
+  }
 
-    repo
+  repo
 }
 
 /// Initializes Btreemap for returns
 fn init_returns() -> BTreeMap<String, Return> {
-    debug!("Initializing returns");
+  debug!("Initializing returns");
 
-    let mut repo: BTreeMap<String, Return> = BTreeMap::new();
+  let mut repo: BTreeMap<String, Return> = BTreeMap::new();
 
-    for ret in repo::get_returns(config::TARGET_TICKER.to_string()) {
-        let ts = ret.ts.to_string();
-        repo.insert(ts, ret);
-    }
+  for ret in repo::get_returns(config::TARGET_TICKER.to_string()) {
+    let ts = ret.ts.to_string();
+    repo.insert(ts, ret);
+  }
 
-    repo
+  repo
 }
 
 /// Initalizes hashmap for complete chromosomes
@@ -152,25 +171,29 @@ fn init_returns() -> BTreeMap<String, Return> {
 /// In order to eliminate duplicated chromosomes, we create a hashmap to keep track of completed strategies
 /// with `key` strategy and `value` chromosome. This helps in later generations.
 fn init_completed_chromosomes() -> HashMap<String, Chromosome> {
-    debug!("Initialize chromosomes map");
-    HashMap::new()
+  debug!("Initialize chromosomes map");
+  HashMap::new()
 }
 
 /// Generate or evolve chromosomes
-fn generate_chromosomes(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chromosome> {
-    warn!("Running generation: {}", generation);
+fn generate_chromosomes(
+  ranked_chromosomes: Vec<Chromosome>,
+  generation: i32,
+  tickers: &Vec<String>,
+) -> Vec<Chromosome> {
+  warn!("Running generation: {}", generation);
 
-    if generation == 1 {
-        let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
-        return forge::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER);
-    } else {
-        return forge::evolve(ranked_chromosomes, generation);
-    }
+  if generation == 1 {
+    let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
+    return forge::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER, tickers);
+  } else {
+    return forge::evolve(ranked_chromosomes, generation, tickers);
+  }
 }
 
 /// Init channel to collect updated chromosomes
 fn init_chromosomes_channel() -> (Sender<Chromosome>, Receiver<Chromosome>) {
-    channel()
+  channel()
 }
 
 /// Init throttle channel
@@ -179,12 +202,12 @@ fn init_chromosomes_channel() -> (Sender<Chromosome>, Receiver<Chromosome>) {
 /// any given time. A key here is that the channel is bounded which
 /// blocks when the channel is full.
 fn init_throttle(
-    workers: usize,
+  workers: usize,
 ) -> (
-    crossbeam_channel::Sender<i32>,
-    crossbeam_channel::Receiver<i32>,
+  crossbeam_channel::Sender<i32>,
+  crossbeam_channel::Receiver<i32>,
 ) {
-    crossbeam_channel::bounded(workers)
+  crossbeam_channel::bounded(workers)
 }
 
 /// Process chromosomes
@@ -192,51 +215,51 @@ fn init_throttle(
 /// Nothing is returned. Instead chromosomes are collected after they are sent back to
 /// the chromosome receiver channel outside of the `for` loop.
 pub fn process_chromosomes(
-    chromosomes: Vec<Chromosome>,
-    completed_chromosomes: &mut HashMap<String, Chromosome>,
-    quotes_repo: &HashMap<String, Vec<Quote>>,
-    returns: &BTreeMap<String, Return>,
-    chromosome_tx: Sender<Chromosome>,
-    throttle_tx: crossbeam_channel::Sender<i32>,
-    throttle_rx: crossbeam_channel::Receiver<i32>,
+  chromosomes: Vec<Chromosome>,
+  completed_chromosomes: &mut HashMap<String, Chromosome>,
+  quotes_repo: &HashMap<String, Vec<Quote>>,
+  returns: &BTreeMap<String, Return>,
+  chromosome_tx: Sender<Chromosome>,
+  throttle_tx: crossbeam_channel::Sender<i32>,
+  throttle_rx: crossbeam_channel::Receiver<i32>,
 ) {
-    for chromosome in chromosomes {
-        let q_clone = quotes_repo.clone();
-        let r_clone = returns.clone();
-        let chromosome_chan = chromosome_tx.clone();
-        let throttle = throttle_rx.clone();
+  for chromosome in chromosomes {
+    let q_clone = quotes_repo.clone();
+    let r_clone = returns.clone();
+    let chromosome_chan = chromosome_tx.clone();
+    let throttle = throttle_rx.clone();
 
-        throttle_tx.send(1); // The value doesn't matter
+    throttle_tx.send(1); // The value doesn't matter
 
-        debug!("Throttle length: {}", throttle_rx.len());
+    debug!("Throttle length: {}", throttle_rx.len());
 
-        if completed_chromosomes.contains_key(&chromosome.chromosome) == false {
-            completed_chromosomes.insert(chromosome.chromosome.clone(), chromosome.clone());
-            thread::spawn(move || {
-                chromosome_chan
-                    .send(process_chromosome(&chromosome, q_clone, r_clone))
-                    .unwrap();
-                throttle.recv().unwrap();
-            });
-        } else {
-            print!("*");
-            io::stdout().flush().unwrap();
-            throttle.recv().unwrap();
-        }
+    if completed_chromosomes.contains_key(&chromosome.chromosome) == false {
+      completed_chromosomes.insert(chromosome.chromosome.clone(), chromosome.clone());
+      thread::spawn(move || {
+        chromosome_chan
+          .send(process_chromosome(&chromosome, q_clone, r_clone))
+          .unwrap();
+        throttle.recv().unwrap();
+      });
+    } else {
+      print!("*");
+      io::stdout().flush().unwrap();
+      throttle.recv().unwrap();
     }
+  }
 }
 
 /// Generate signals and metadata for chromosome
 pub fn process_chromosome(
-    chromosome: &Chromosome,
-    quotes_repo: HashMap<String, Vec<Quote>>,
-    returns: BTreeMap<String, Return>,
+  chromosome: &Chromosome,
+  quotes_repo: HashMap<String, Vec<Quote>>,
+  returns: BTreeMap<String, Return>,
 ) -> Chromosome {
-    let mut trade_signals = vger::generate_signals(&chromosome, quotes_repo);
-    vger::merge_returns(&mut trade_signals, &returns);
-    vger::calc_pnl(&mut trade_signals, chromosome.clone());
-    writer::write_signals(&trade_signals, &chromosome);
-    vger::update_chromosome(chromosome.clone(), trade_signals)
+  let mut trade_signals = vger::generate_signals(&chromosome, quotes_repo);
+  vger::merge_returns(&mut trade_signals, &returns);
+  vger::calc_pnl(&mut trade_signals, chromosome.clone());
+  writer::write_signals(&trade_signals, &chromosome);
+  vger::update_chromosome(chromosome.clone(), trade_signals)
 }
 
 /// Rank chromosomes by w_kelly
@@ -253,21 +276,38 @@ pub fn process_chromosome(
 /// makes the starting index 9.
 /// ```
 pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
-    let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
-        .into_iter()
-        .filter(|c| c.num_of_trades > 100)
-        .collect();
-    filtered_chromosomes.sort_by_key(|c| c.percentage_winners as i32);
+  let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
+    .into_iter()
+    .filter(|c| c.num_of_trades > 100)
+    .collect();
+  filtered_chromosomes.sort_by_key(|c| c.percentage_winners as i32);
 
-    let end_idx = filtered_chromosomes.len() as i32;
-    let fittest = config::FITTEST as i32;
-    let start_idx = end_idx - fittest;
+  let end_idx = filtered_chromosomes.len() as i32;
+  let fittest = config::FITTEST as i32;
+  let start_idx = end_idx - fittest;
 
-    for i in start_idx..end_idx {
-        let chromosome = &mut filtered_chromosomes[i as usize];
-        let negative_rank = (end_idx - i - fittest - 1) as i32;
-        chromosome.rank = negative_rank.abs() as i32;
-    }
+  for i in start_idx..end_idx {
+    let chromosome = &mut filtered_chromosomes[i as usize];
+    let negative_rank = (end_idx - i - fittest - 1) as i32;
+    chromosome.rank = negative_rank.abs() as i32;
+  }
 
-    filtered_chromosomes.clone()
+  filtered_chromosomes.clone()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn it_works() {
+    assert_eq!(2 + 2, 4);
+  }
+
+  #[test]
+  fn test_open_tickers() {
+    let tickers = open_tickers("test_tickers.txt");
+    let first = &tickers[0];
+    assert_eq!("MMM", first);
+  }
 }

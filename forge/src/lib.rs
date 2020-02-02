@@ -9,11 +9,6 @@ extern crate log;
 extern crate env_logger;
 
 use rand::prelude::*;
-use std::{
-  fs::File,
-  io::{prelude::*, BufReader},
-  path::Path,
-};
 use uuid::Uuid;
 
 mod config;
@@ -45,10 +40,10 @@ pub struct Chromosome {
 /// ```
 ///
 /// ```
-pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str, tickers_path: &str) -> Vec<Chromosome> {
+pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str, tickers: &Vec<String>) -> Vec<Chromosome> {
   // debug!("generate chromosomes");
   let mut chromosomes: Vec<Chromosome> = vec![];
-  let tickers = open_tickers(tickers_path);
+  // let tickers = open_tickers(tickers_path);
   for dna in dnas {
     let strategies = decode_dna("<code>".to_string(), &dna, &tickers);
     let strategies_vec: &Vec<&str> = &strategies.split("::").collect();
@@ -73,17 +68,6 @@ pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str, ticke
     chromosomes.push(chromosome);
   }
   chromosomes
-}
-
-// Opens the tickers file and returns a vector of the tickers
-// as strings
-fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
-  let file = File::open(filename).expect("no such file");
-  let buf = BufReader::new(file);
-  buf
-    .lines()
-    .map(|l| l.expect("Could not parse line"))
-    .collect()
 }
 
 /// Decodes dna
@@ -152,12 +136,12 @@ fn generate_dna(len: i32) -> Dna {
 /// When evolving chromsomes we take the fittest 500 chromosomes and generate a pool
 /// of ranked chromosomes. Better chromosomes are more frequest in the pool. Based on the
 /// desired size of the new population we pull two randome dnas and have them mate.
-pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32) -> Vec<Chromosome> {
+pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32, tickers: &Vec<String>) -> Vec<Chromosome> {
   let start = &ranked_chromosomes.len() - config::FITTEST;
   let fittest_chromosomes = &ranked_chromosomes[start..];
   let pool = generate_pool(fittest_chromosomes);
   let dnas = mate(&pool);
-  generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER)
+  generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER, tickers)
 }
 
 fn generate_pool(ranked_chromosomes: &[Chromosome]) -> Vec<Dna> {
@@ -264,12 +248,5 @@ mod tests {
     let dna = vec![241, 252, 253, 8, 13, 118, 184, 1, 225, 54, 141, 95];
     let chromosome = decode_dna("<code>".to_string(), &dna);
     assert_eq!("conupdays:ISRG:8::stdevd:XOM:1::gapup:DAL:95", chromosome);
-  }
-
-  #[test]
-  fn test_open_tickers() {
-    let tickers = open_tickers("test_tickers.txt");
-    let first = &tickers[0];
-    assert_eq!("MMM", first);
   }
 }
