@@ -80,26 +80,40 @@ use std::{
   io::{prelude::*, BufReader},
   path::Path,
 };
+use std::time::{SystemTime, UNIX_EPOCH};
+
 
 pub fn main() {
   env_logger::init();
   info!("Hello, world!");
 
   // Init sequence
-  let tickers = open_tickers("/home/choiway/data/spx_data_relix/test_tickers.txt");
-  let quotes_repo = init_quotes_repo();
+  let backtest_id = generate_backtest_id("SPY-SP500");
+  let repo_path = "/home/choiway/data/spx_data_relix/";
+  let target_returns_path = "/home/choiway/data/spx_data_relix/aapl_returns.csv";
+  let ticker_path = "/home/choiway/data/spx_data_relix/test_tickers.txt";
+  info!("Initializing tickers");
+  let tickers = open_tickers(ticker_path);
+  info!("Initializing quotes repo");
+  let quotes_repo = init_quotes_repo(&tickers, repo_path);
+  info!("Initializing chromosomes");
   let mut completed_chromosomes = init_completed_chromosomes();
-  let returns = init_returns();
-  repo::init_trade_signals();
-  repo::init_chromosomes();
+  info!("Initializing returns");
+  let returns = init_returns(target_returns_path);
+  info!("Initializing ranked chromosomes");
   let mut ranked_chromosomes: Vec<Chromosome> = vec![];
 
   // Run generations
+  //
+  // [WHC] If you ever decide to figure out how to run this across a cluster
+  // you'll have to extract this to a separate machine and figure out
+  // how to coordinate all the threads on different nodes.
+  // Good luck!
   for generation in 1..4 {
     let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers);
     let chromosomes_len = *&chromosomes.len();
     let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
-    let (throttle_tx, throttle_rx) = init_throttle(8);
+    let (throttle_tx, throttle_rx) = init_throttle(4);
     // Check completed chromosomes
     process_chromosomes(
       chromosomes,
@@ -109,6 +123,7 @@ pub fn main() {
       chromosomes_tx,
       throttle_tx,
       throttle_rx,
+      &backtest_id,
     );
 
     let updated_chromosomes: Vec<Chromosome> = chromosomes_rx
@@ -118,7 +133,7 @@ pub fn main() {
       .collect();
 
     ranked_chromosomes = rank_chromosomes(updated_chromosomes);
-    writer::write_chromosomes(&ranked_chromosomes);
+    writer::write_chromosomes(&ranked_chromosomes, generation, &backtest_id);
   }
 
   info!("So long and thanks for all the fish!");
@@ -126,7 +141,7 @@ pub fn main() {
 
 // Opens the tickers file and returns a vector of the tickers
 // as strings
-pub fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
+fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
   let file = File::open(filename).expect("no such file");
   let buf = BufReader::new(file);
   buf
@@ -135,30 +150,42 @@ pub fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
     .collect()
 }
 
+// The backtest id should take the following form
+// TARGET_TICKER-TICKER_POOL
+// i.e. SPX-SP500
+// We add epoch to differentiate between different runs of the same target-pool
+//
+fn generate_backtest_id (id: &str) -> String {
+  let start = SystemTime::now();
+  let epoch = start.duration_since(UNIX_EPOCH)
+      .expect("Time went backwards");
+  format!("{}-{:?}", id, epoch)
+}
+
 /// Initializes hashmap for quotes
 ///
 /// The quotes repo
-fn init_quotes_repo(tickers: &Vec<String>, ticker_path: &str) -> HashMap<String, Vec<Quote>> {
+fn init_quotes_repo(tickers: &Vec<String>, repo_path: &str) -> HashMap<String, Vec<Quote>> {
   debug!("Initializing quotes repo");
 
   let mut repo = HashMap::new();
 
-  for ticker in repo::get_tickers() {
+  for ticker in tickers {
     debug!("{:?}", ticker);
-    let quotes = repo::get_quotes_by_symbol(&ticker.symbol, ticker_path);
-    repo.insert(ticker.symbol, quotes);
+    let quotes = repo::get_quotes_by_symbol(&ticker, repo_path);
+    repo.insert(ticker.clone(), quotes);
   }
 
   repo
 }
 
 /// Initializes Btreemap for returns
-fn init_returns() -> BTreeMap<String, Return> {
+fn init_returns(target_returns_path: &str) -> BTreeMap<String, Return> {
   debug!("Initializing returns");
 
   let mut repo: BTreeMap<String, Return> = BTreeMap::new();
 
-  for ret in repo::get_returns(config::TARGET_TICKER.to_string()) {
+  for ret in repo::get_returns(target_returns_path) {
     let ts = ret.ts.to_string();
     repo.insert(ts, ret);
   }
@@ -222,12 +249,14 @@ pub fn process_chromosomes(
   chromosome_tx: Sender<Chromosome>,
   throttle_tx: crossbeam_channel::Sender<i32>,
   throttle_rx: crossbeam_channel::Receiver<i32>,
+  backtest_id: &String,
 ) {
   for chromosome in chromosomes {
     let q_clone = quotes_repo.clone();
     let r_clone = returns.clone();
     let chromosome_chan = chromosome_tx.clone();
     let throttle = throttle_rx.clone();
+    let backtest_id_clone = backtest_id.clone();
 
     throttle_tx.send(1); // The value doesn't matter
 
@@ -237,7 +266,12 @@ pub fn process_chromosomes(
       completed_chromosomes.insert(chromosome.chromosome.clone(), chromosome.clone());
       thread::spawn(move || {
         chromosome_chan
-          .send(process_chromosome(&chromosome, q_clone, r_clone))
+          .send(process_chromosome(
+            &chromosome,
+            q_clone,
+            r_clone,
+            backtest_id_clone,
+          ))
           .unwrap();
         throttle.recv().unwrap();
       });
@@ -254,11 +288,12 @@ pub fn process_chromosome(
   chromosome: &Chromosome,
   quotes_repo: HashMap<String, Vec<Quote>>,
   returns: BTreeMap<String, Return>,
+  backtest_id: String,
 ) -> Chromosome {
   let mut trade_signals = vger::generate_signals(&chromosome, quotes_repo);
   vger::merge_returns(&mut trade_signals, &returns);
   vger::calc_pnl(&mut trade_signals, chromosome.clone());
-  writer::write_signals(&trade_signals, &chromosome);
+  writer::write_signals(&trade_signals, &chromosome, backtest_id);
   vger::update_chromosome(chromosome.clone(), trade_signals)
 }
 
