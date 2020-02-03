@@ -1,13 +1,15 @@
 use chrono;
 use chrono::prelude::*;
 use uuid;
+use serde::Deserialize;
+
 
 #[derive(Debug)]
 pub struct Ticker {
     pub symbol: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Quote {
     pub ticker: String,
     pub ts: f64,
