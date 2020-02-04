@@ -123,7 +123,6 @@ pub fn write_signals(
 
 fn log_write_signals(chromosome: &Chromosome) {
   debug!("writing signal with id: {} to disk", chromosome.id);
-  print!(".");
   io::stdout().flush().unwrap();
 }
 

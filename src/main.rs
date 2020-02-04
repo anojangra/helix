@@ -263,6 +263,7 @@ pub fn process_chromosomes(
     debug!("Throttle length: {}", throttle_rx.len());
 
     if completed_chromosomes.contains_key(&chromosome.chromosome) == false {
+      print!(".");
       completed_chromosomes.insert(chromosome.chromosome.clone(), chromosome.clone());
       thread::spawn(move || {
         chromosome_chan
