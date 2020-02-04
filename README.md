@@ -1,5 +1,11 @@
 # Rusty Relix
 
+```
+cargo build --release
+
+RUST_LOG=info ./helix
+```
+
 ## January 2020
 
 Coming back to this code after two years. Trying to figure out how to split the workload up across mutilple servers. 

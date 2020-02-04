@@ -33,7 +33,8 @@ pub fn write_chromosomes(chromosomes: &Vec<Chromosome>, generation: i32, backtes
     let c = chromosome;
     write!(
       f,
-      "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+      "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+      backtest_id,
       c.id,
       c.target_ticker,
       c.chromosome,
@@ -96,13 +97,14 @@ pub fn write_signals(
   backtest_id: String,
 ) {
   log_write_signals(chromosome);
-  let (filename, mut f) = create_file(chromosome, backtest_id);
+  let (_filename, mut f) = create_file(chromosome);
   for signal in signals {
     let s = signal.1;
     debug!("writing signal: {:?} to disk", &s);
     write!(
       f,
-      "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+      "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+      backtest_id,
       s.chromosome_id,
       s.ts,
       fmt_vec_string(s.strategies.clone()),
@@ -126,8 +128,8 @@ fn log_write_signals(chromosome: &Chromosome) {
 }
 
 /// Create temp file for signals
-fn create_file(chromosome: &Chromosome, backtest_id: String) -> (String, File) {
-  let filename = format!("/tmp/{}.txt", chromosome.id);
+fn create_file(chromosome: &Chromosome) -> (String, File) {
+  let filename = format!("/tmp/ch_{}.txt", chromosome.id);
   let file = File::create(&filename).expect("Unable to create file");
   return (filename, file);
 }

@@ -1,8 +1,15 @@
-CREATE SCHEMA helix;
+/*
+Make sure you have timescale installed. 
+
+CREATE DATABASE helix OWNER merovingian;
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
+*/
 
 DROP TABLE IF EXISTS trade_signals;
 CREATE TABLE trade_signals (
-    chromosome_id uuid
+    backtest_id text
+,   chromosome_id uuid
 ,   ts integer not null
 ,   strategies text array
 ,   signals integer array
@@ -12,11 +19,11 @@ CREATE TABLE trade_signals (
 ,   ret numeric
 ,   pnl numeric
 );
-SELECT create_hypertable('trade_signals', 'ts', 'chromosome_id');
 CREATE INDEX ON trade_signals (chromosome_id, ts);
 
 DROP TABLE IF EXISTS trade_chromosomes;
 CREATE TABLE trade_chromosomes (
+  backtest_id text,
   id uuid,
   target_ticker text, 
   chromosome text,
