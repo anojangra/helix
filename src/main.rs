@@ -56,6 +56,7 @@
 //!	"krakenEUR",
 //!	"krakenUSD"];
 //! ```
+extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate crossbeam_channel;
@@ -64,7 +65,6 @@ extern crate forge;
 extern crate repo;
 extern crate vger;
 extern crate writer;
-extern crate clap;
 
 mod config;
 
@@ -85,8 +85,10 @@ use std::{
 };
 
 pub fn main() {
+  App::new("helix").version("v0.1-beta").get_matches();
   env_logger::init();
   info!("Hello, world!");
+
 
   // Init sequence
   let num_of_threads = 12;
@@ -95,6 +97,7 @@ pub fn main() {
   let repo_path = "/home/choiway/data-repo/btc_prices_hourly/";
   let target_returns_path = "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
   let ticker_path = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
+  
   info!("Initializing tickers");
   let tickers = open_tickers(ticker_path);
   info!("Initializing quotes repo");

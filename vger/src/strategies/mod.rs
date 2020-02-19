@@ -145,6 +145,8 @@ fn make_window(quotes: &Vec<Quote>, length: usize) -> Vec<Window> {
 }
 
 /// creates a vector of `Lags`
+/// 
+#[allow(dead_code)]
 fn build_lags(quotes: &Vec<Quote>, periods: usize) -> Vec<Lag> {
     let mut lags: Vec<Lag> = vec![];
     for n in periods..quotes.len() {

@@ -13,7 +13,6 @@ log = "0.4.2"
 env_logger = "0.5.10"
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
-clap = "2.33.0"
 
 
 [dependencies.forge]
