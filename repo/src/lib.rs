@@ -1,7 +1,3 @@
-//! Manages interactions with the database
-//!
-//! Acts as wrapper for database operations and sql statements
-extern crate postgres;
 #[macro_use]
 extern crate log;
 extern crate chrono;

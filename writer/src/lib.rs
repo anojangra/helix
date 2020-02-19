@@ -9,7 +9,7 @@ extern crate repo;
 
 use forge::Chromosome;
 use std::collections::BTreeMap;
-use std::fs;
+// use std::fs;
 use std::fs::File;
 use std::io::{self, Write};
 use vger::TradeSignal;
@@ -54,8 +54,6 @@ pub fn write_chromosomes(chromosomes: &Vec<Chromosome>, generation: i32, backtes
     )
     .unwrap();
   }
-  // repo::copy_chromosomes();
-  // fs::remove_file("/tmp/chromosomes.txt").unwrap();
 }
 
 /// Format vector of String
@@ -117,8 +115,6 @@ pub fn write_signals(
     )
     .unwrap();
   }
-  // repo::copy_signals(&filename);
-  // fs::remove_file(filename).unwrap();
 }
 
 fn log_write_signals(chromosome: &Chromosome) {
