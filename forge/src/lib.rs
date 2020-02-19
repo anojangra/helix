@@ -40,7 +40,12 @@ pub struct Chromosome {
 /// ```
 ///
 /// ```
-pub fn generate_chromosomes(dnas: Vec<Dna>, generation: i32, ticker: &str, tickers: &Vec<String>) -> Vec<Chromosome> {
+pub fn generate_chromosomes(
+  dnas: Vec<Dna>,
+  generation: i32,
+  ticker: &str,
+  tickers: &Vec<String>,
+) -> Vec<Chromosome> {
   // debug!("generate chromosomes");
   let mut chromosomes: Vec<Chromosome> = vec![];
   // let tickers = open_tickers(tickers_path);
@@ -111,6 +116,8 @@ fn expand_code(code: String, base: &i32, tickers: &Vec<String>) -> String {
 pub type Dna = Vec<i32>;
 
 /// Generates a population dnas of length `len`
+/// The length determines the number of strategies in
+/// the dna
 pub fn generate_dnas(len: i32, qty: i32) -> Vec<Dna> {
   let mut dnas: Vec<Dna> = vec![];
   for _i in 0..qty {
@@ -136,12 +143,17 @@ fn generate_dna(len: i32) -> Dna {
 /// When evolving chromsomes we take the fittest 500 chromosomes and generate a pool
 /// of ranked chromosomes. Better chromosomes are more frequest in the pool. Based on the
 /// desired size of the new population we pull two randome dnas and have them mate.
-pub fn evolve(ranked_chromosomes: Vec<Chromosome>, generation: i32, tickers: &Vec<String>) -> Vec<Chromosome> {
+pub fn evolve(
+  ranked_chromosomes: Vec<Chromosome>,
+  generation: i32,
+  tickers: &Vec<String>,
+  target_ticker: &str,
+) -> Vec<Chromosome> {
   let start = &ranked_chromosomes.len() - config::FITTEST;
   let fittest_chromosomes = &ranked_chromosomes[start..];
   let pool = generate_pool(fittest_chromosomes);
   let dnas = mate(&pool);
-  generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER, tickers)
+  generate_chromosomes(dnas.clone(), generation, target_ticker, tickers)
 }
 
 fn generate_pool(ranked_chromosomes: &[Chromosome]) -> Vec<Dna> {

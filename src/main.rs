@@ -88,6 +88,7 @@ pub fn main() {
 
   // Init sequence
   let num_of_threads = 12;
+  let target_ticker = "coinbaseUSD";
   let backtest_id = generate_backtest_id("BTC-Exchange::CoinbaseUSD");
   let repo_path = "/home/choiway/data-repo/btc_prices_hourly/";
   let target_returns_path = "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
@@ -110,7 +111,7 @@ pub fn main() {
   // how to coordinate all the threads on different nodes.
   // Good luck!
   for generation in 1..4 {
-    let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers);
+    let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers, target_ticker);
     let chromosomes_len = *&chromosomes.len();
     let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
     let (throttle_tx, throttle_rx) = init_throttle(num_of_threads);
@@ -208,14 +209,15 @@ fn generate_chromosomes(
   ranked_chromosomes: Vec<Chromosome>,
   generation: i32,
   tickers: &Vec<String>,
+  target_ticker: &str,
 ) -> Vec<Chromosome> {
   warn!("Running generation: {}", generation);
 
   if generation == 1 {
     let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
-    return forge::generate_chromosomes(dnas.clone(), generation, config::TARGET_TICKER, tickers);
+    return forge::generate_chromosomes(dnas.clone(), generation, target_ticker, tickers);
   } else {
-    return forge::evolve(ranked_chromosomes, generation, tickers);
+    return forge::evolve(ranked_chromosomes, generation, tickers, target_ticker);
   }
 }
 

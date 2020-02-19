@@ -67,7 +67,7 @@ pub fn statements_length() -> i32 {
 	STATEMENTS.len() as i32
 }
 
-pub static TARGET_TICKER: &str = "SPY";
+// pub static TARGET_TICKER: &str = "SPY";
 
 // Mutate probably of dna applied after crossover
 pub static MUTATE_PROB: f32 = 0.20;
