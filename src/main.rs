@@ -88,10 +88,11 @@ pub fn main() {
   info!("Hello, world!");
 
   // Init sequence
-  let backtest_id = generate_backtest_id("SPY-SP500");
-  let repo_path = "/home/choiway/data/spx_data_relix/";
-  let target_returns_path = "/home/choiway/data/spx_data_relix/aapl_returns.csv";
-  let ticker_path = "/home/choiway/data/spx_data_relix/test_tickers.txt";
+  let num_of_threads = 12;
+  let backtest_id = generate_backtest_id("BTC-Exchange::CoinbaseUSD");
+  let repo_path = "/home/choiway/data-repo/btc_prices_hourly/";
+  let target_returns_path = "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
+  let ticker_path = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
   info!("Initializing tickers");
   let tickers = open_tickers(ticker_path);
   info!("Initializing quotes repo");
@@ -113,7 +114,7 @@ pub fn main() {
     let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers);
     let chromosomes_len = *&chromosomes.len();
     let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
-    let (throttle_tx, throttle_rx) = init_throttle(4);
+    let (throttle_tx, throttle_rx) = init_throttle(num_of_threads);
     // Check completed chromosomes
     process_chromosomes(
       chromosomes,

@@ -154,6 +154,7 @@ pub fn get_returns(target_returns_path: &str) -> Vec<Return> {
     .expect("Couldn't open target returns file. Make sure you entered the full path\n");
   for row in rdr.records() {
     let record: std::result::Result<csv::StringRecord, csv::Error> = row;
+    debug!("{:?}", record);
     let r = match record {
       Ok(v) => Return {
         ts: v.get(0).unwrap().parse().unwrap(),
