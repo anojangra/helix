@@ -64,9 +64,11 @@ extern crate forge;
 extern crate repo;
 extern crate vger;
 extern crate writer;
+extern crate clap;
 
 mod config;
 
+use clap::App;
 use forge::Chromosome;
 use repo::schemas::Quote;
 use repo::schemas::Return;
