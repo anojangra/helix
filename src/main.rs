@@ -111,7 +111,7 @@ pub fn main() {
   // how to coordinate all the threads on different nodes.
   // Good luck!
   for generation in 1..4 {
-    let mut chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers, target_ticker);
+    let chromosomes = generate_chromosomes(ranked_chromosomes, generation, &tickers, target_ticker);
     let chromosomes_len = *&chromosomes.len();
     let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
     let (throttle_tx, throttle_rx) = init_throttle(num_of_threads);

@@ -201,7 +201,7 @@ fn crossover(x: Dna, y: Dna, splice_point: usize) -> Dna {
 fn mutate_dna(dna: Dna) -> Dna {
   let mut mutated_dna: Dna = vec![];
   for base in dna {
-    let mut b: i32;
+    let b: i32;
     let p = rand::random::<f32>();
     if p < config::MUTATE_PROB {
       b = mutate_base(base);
