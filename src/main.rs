@@ -75,13 +75,12 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
   fs::File,
   io::{prelude::*, BufReader},
   path::Path,
 };
-use std::time::{SystemTime, UNIX_EPOCH};
-
 
 pub fn main() {
   env_logger::init();
@@ -156,10 +155,11 @@ fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
 // i.e. SPX-SP500
 // We add epoch to differentiate between different runs of the same target-pool
 //
-fn generate_backtest_id (id: &str) -> String {
+fn generate_backtest_id(id: &str) -> String {
   let start = SystemTime::now();
-  let epoch = start.duration_since(UNIX_EPOCH)
-      .expect("Time went backwards");
+  let epoch = start
+    .duration_since(UNIX_EPOCH)
+    .expect("Time went backwards");
   format!("{}-{:?}", id, epoch)
 }
 
