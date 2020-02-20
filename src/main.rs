@@ -85,7 +85,7 @@ use std::{
 };
 
 pub fn main() {
-  App::new("helix")
+  let matches = App::new("helix")
     .version("v0.1-beta")
     .author("choiway <waynechoi@gmail.com>")
     .about("Genetic Algorithm for Financial Data")
@@ -107,38 +107,46 @@ pub fn main() {
     )
     .arg(
       Arg::with_name("pool_description")
-      .short("d")
-      .long("pool_description")
-      .value_name("DESCRIPTION")
-      .help("Description of the pool of securities (i.e. SP500, btc-exchanges)")
-      .required(true)
+        .short("d")
+        .long("pool_description")
+        .value_name("DESCRIPTION")
+        .help("Description of the pool of securities (i.e. SP500, btc-exchanges)")
+        .required(true),
     )
     .arg(
       Arg::with_name("repo_pathname")
-      .short("p")
-      .long("repo_pathname")
-      .value_name("PATH")
-      .help("Path to work directory. Should have a *data* directory as a sub directory")
-      .required(true)
+        .short("p")
+        .long("repo_pathname")
+        .value_name("PATH")
+        .help("Path to work directory. Should have a *data* directory as a sub directory")
+        .required(true),
     )
     .arg(
       Arg::with_name("returns_filename")
-      .short("r")
-      .value_name("FILENAME")
-      .help("Filename of the target returns to predict. Should be located in the repo")
-      .required(true)
+        .short("r")
+        .value_name("FILENAME")
+        .help("Filename of the target returns to predict. Should be located in the repo")
+        .required(true),
     )
     .get_matches();
+
   env_logger::init();
-  info!("Hello, world!");
+  info!("Starting grammatical revolution");
 
   // Init sequence
-  let num_of_threads: usize = 12;
-  let target_ticker: &str = "coinbaseUSD";
-  let backtest_id: String = generate_backtest_id("BTC-Exchange::CoinbaseUSD");
-  let repo_path: &str = "/home/choiway/data-repo/btc_prices_hourly/";
-  let target_returns_path: &str =
-    "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
+  let num_of_threads: usize = matches.value_of("threads").unwrap_or("4").parse().unwrap();
+  info!("Number of threads: {}", num_of_threads);
+  let target_ticker: &str = matches.value_of("target_ticker").unwrap();
+  info!("Target Ticker: {}", target_ticker);
+  let pool_description: &str = matches.value_of("pool_description").unwrap();
+  info!("Pool Description: {}", pool_description);
+  let backtest_id: String = generate_backtest_id(pool_description, target_ticker);
+  info!("Backtest ID: {}", backtest_id);
+  let repo_path: &str = matches.value_of("repo_pathname").unwrap();
+  info!("Repo Path: {}", repo_path);
+  let returns_filename = matches.value_of("returns_filename").unwrap();
+  let target_returns_path: &str = &format!("{}{}", repo_path, returns_filename);
+  debug!("Target returns path: {}", target_returns_path);
   let ticker_path: &str = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
   info!("Initializing tickers");
   let tickers = open_tickers(ticker_path);
@@ -151,6 +159,7 @@ pub fn main() {
   info!("Initializing ranked chromosomes");
   let mut ranked_chromosomes: Vec<Chromosome> = vec![];
 
+  panic!();
   // Run generations
   //
   // [WHC] If you ever decide to figure out how to run this across a cluster
@@ -203,7 +212,8 @@ fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
 // i.e. SPX-SP500
 // We add epoch to differentiate between different runs of the same target-pool
 //
-fn generate_backtest_id(id: &str) -> String {
+fn generate_backtest_id(pool_description: &str, target_ticker: &str) -> String {
+  let id = format!("{}::{}", pool_description, target_ticker);
   let start = SystemTime::now();
   let epoch = start
     .duration_since(UNIX_EPOCH)

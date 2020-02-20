@@ -1,10 +1,18 @@
 # Rusty Relix
 
+## USAGE
+
+```
+RUST_LOG=debug ./helix --pool_description btc-exchanges --repo_pathname /home/choiway/data-repo/btc_prices_hourly/ -r coinbaseUSD_returns.csv --target_ticker coinbaseUSD --threads 12
+```
+
 ```
 cargo build --release
 
 RUST_LOG=info ./helix
 ```
+
+## Build
 
 ## January 2020
 
