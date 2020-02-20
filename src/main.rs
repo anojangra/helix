@@ -80,11 +80,6 @@ use std::io::{self, Write};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{
-  fs::File,
-  io::{prelude::*, BufReader},
-  path::Path,
-};
 
 pub fn main() {
   let matches = App::new("helix")
