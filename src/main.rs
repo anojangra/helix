@@ -68,7 +68,7 @@ extern crate writer;
 
 mod config;
 
-use clap::App;
+use clap::{App, Arg};
 use forge::Chromosome;
 use repo::schemas::Quote;
 use repo::schemas::Return;
@@ -85,19 +85,61 @@ use std::{
 };
 
 pub fn main() {
-  App::new("helix").version("v0.1-beta").get_matches();
+  App::new("helix")
+    .version("v0.1-beta")
+    .author("choiway <waynechoi@gmail.com>")
+    .about("Genetic Algorithm for Financial Data")
+    .arg(
+      Arg::with_name("threads")
+        .short("t")
+        .long("threads")
+        .value_name("THREADS")
+        .help("Sets the number of threads to use")
+        .required(true),
+    )
+    .arg(
+      Arg::with_name("target_ticker")
+        .short("s")
+        .long("target_ticker")
+        .value_name("TARGET_TICKER")
+        .help("The ticker of the security you are trying to predict (i.e. SPY, AAPL, coinbaseUSD)")
+        .required(true),
+    )
+    .arg(
+      Arg::with_name("pool_description")
+      .short("d")
+      .long("pool_description")
+      .value_name("DESCRIPTION")
+      .help("Description of the pool of securities (i.e. SP500, btc-exchanges)")
+      .required(true)
+    )
+    .arg(
+      Arg::with_name("repo_pathname")
+      .short("p")
+      .long("repo_pathname")
+      .value_name("PATH")
+      .help("Path to work directory. Should have a *data* directory as a sub directory")
+      .required(true)
+    )
+    .arg(
+      Arg::with_name("returns_filename")
+      .short("r")
+      .value_name("FILENAME")
+      .help("Filename of the target returns to predict. Should be located in the repo")
+      .required(true)
+    )
+    .get_matches();
   env_logger::init();
   info!("Hello, world!");
 
-
   // Init sequence
-  let num_of_threads = 12;
-  let target_ticker = "coinbaseUSD";
-  let backtest_id = generate_backtest_id("BTC-Exchange::CoinbaseUSD");
-  let repo_path = "/home/choiway/data-repo/btc_prices_hourly/";
-  let target_returns_path = "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
-  let ticker_path = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
-  
+  let num_of_threads: usize = 12;
+  let target_ticker: &str = "coinbaseUSD";
+  let backtest_id: String = generate_backtest_id("BTC-Exchange::CoinbaseUSD");
+  let repo_path: &str = "/home/choiway/data-repo/btc_prices_hourly/";
+  let target_returns_path: &str =
+    "/home/choiway/data-repo/btc_prices_hourly/coinbaseUSD_returns.csv";
+  let ticker_path: &str = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
   info!("Initializing tickers");
   let tickers = open_tickers(ticker_path);
   info!("Initializing quotes repo");
