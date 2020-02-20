@@ -127,10 +127,8 @@ pub fn main() {
     )
     .get_matches();
 
-  env_logger::init();
-  info!("Starting grammatical revolution");
+  // Parse arguments
 
-  // Init sequence
   let num_of_threads: usize = matches.value_of("threads").unwrap_or("4").parse().unwrap();
   info!("Number of threads: {}", num_of_threads);
   let target_ticker: &str = matches.value_of("target_ticker").unwrap();
@@ -144,7 +142,11 @@ pub fn main() {
   let returns_filename = matches.value_of("returns_filename").unwrap();
   let target_returns_path: &str = &format!("{}{}", repo_path, returns_filename);
   debug!("Target returns path: {}", target_returns_path);
-  // let ticker_path: &str = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
+
+  // Init sequence
+  
+  env_logger::init();
+  info!("Starting grammatical revolution");
   info!("Initializing tickers");
   let tickers = get_tickers(repo_path);
   info!("Initializing quotes repo");
@@ -192,8 +194,9 @@ pub fn main() {
   info!("So long and thanks for all the fish!");
 }
 
-// Opens the tickers file and returns a vector of the tickers
-// as strings
+// Creates a vector of tickers from CSV file names
+// filenames should be named in the following format:
+// AAPL.csv
 fn get_tickers(repo_path: &str) -> Vec<String> {
   let data_path: &str = &format! {"{}data/*.csv", repo_path};
   debug!("Opening tickers at path: {}", data_path);
