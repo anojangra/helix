@@ -62,6 +62,7 @@ extern crate log;
 extern crate crossbeam_channel;
 extern crate env_logger;
 extern crate forge;
+extern crate glob;
 extern crate repo;
 extern crate vger;
 extern crate writer;
@@ -70,6 +71,7 @@ mod config;
 
 use clap::{App, Arg};
 use forge::Chromosome;
+use glob::{glob_with, MatchOptions};
 use repo::schemas::Quote;
 use repo::schemas::Return;
 use std::collections::BTreeMap;
@@ -147,9 +149,9 @@ pub fn main() {
   let returns_filename = matches.value_of("returns_filename").unwrap();
   let target_returns_path: &str = &format!("{}{}", repo_path, returns_filename);
   debug!("Target returns path: {}", target_returns_path);
-  let ticker_path: &str = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
+  // let ticker_path: &str = "/home/choiway/data-repo/btc_prices_hourly/tickers.txt";
   info!("Initializing tickers");
-  let tickers = open_tickers(ticker_path);
+  let tickers = get_tickers(repo_path);
   info!("Initializing quotes repo");
   let quotes_repo = init_quotes_repo(&tickers, repo_path);
   info!("Initializing chromosomes");
@@ -159,7 +161,6 @@ pub fn main() {
   info!("Initializing ranked chromosomes");
   let mut ranked_chromosomes: Vec<Chromosome> = vec![];
 
-  panic!();
   // Run generations
   //
   // [WHC] If you ever decide to figure out how to run this across a cluster
@@ -198,13 +199,22 @@ pub fn main() {
 
 // Opens the tickers file and returns a vector of the tickers
 // as strings
-fn open_tickers(filename: impl AsRef<Path>) -> Vec<String> {
-  let file = File::open(filename).expect("no such file");
-  let buf = BufReader::new(file);
-  buf
-    .lines()
-    .map(|l| l.expect("Could not parse line"))
-    .collect()
+fn get_tickers(repo_path: &str) -> Vec<String> {
+  let data_path: &str = &format! {"{}data/*.csv", repo_path};
+  debug!("Opening tickers at path: {}", data_path);
+  let options = MatchOptions {
+    case_sensitive: false,
+    require_literal_separator: false,
+    require_literal_leading_dot: false,
+  };
+  let mut tickers: Vec<String> = Vec::new();
+  for entry in glob_with(data_path, options).unwrap() {
+    if let Ok(path) = entry {
+      let filename: &str = path.file_stem().unwrap().to_str().unwrap();
+      tickers.push(filename.to_string());
+    }
+  }
+  tickers
 }
 
 // The backtest id should take the following form
