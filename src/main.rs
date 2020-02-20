@@ -133,7 +133,8 @@ fn init_quotes_repo() -> HashMap<String, Vec<Quote>> {
     repo
 }
 
-/// Initializes Btreemap for returns
+/// Initializes Btreemap of returns of the target ticker
+/// Pulls returns from the database
 fn init_returns() -> BTreeMap<String, Return> {
     debug!("Initializing returns");
 

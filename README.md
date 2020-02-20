@@ -14,3 +14,7 @@ Architecturally, we need to figure out how to move the data. Some things to cons
 * What should get passed to each node? 
 * Start with getting the data from postgresql.
 
+## Things to abstract
+
+1. `forge` - ticker pool 
+2. 
