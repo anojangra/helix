@@ -1,9 +1,43 @@
-//! An implementation of a genetic algortihm that use grammtical evolution
+//! An implementation of a genetic algortihm that uses grammatical evolution
 //! to find trading signals
 //!
 //! # Overview
 //!
-//! Helix takes data from a table with the following structure
+//! 
+//! ## Directory structure
+//! Helix pulls data from a directory with the following structure
+//! 
+//! ```
+//! root/
+//!   returns.txt
+//!   /data 
+//!   /results
+//! ```
+//! 
+//! ### Returns file
+//! 
+//! `returns.txt` should contain the returns that you're trying to predict in the following format
+//! `epoch_time, next_ret`
+//!  
+//! ```
+//! 1234334,0.001
+//! 123456,0.012
+//! ```
+//! 
+//! ### Data directory
+//! 
+//! The data directory should house the pool of pricing data by ticker. 
+//! 
+//! (Describe this pool)
+//! 
+//! Each file should be named with the ticker symbol followed by the csv extension.
+//! 
+//! ```
+//! AAPL.csv
+//! MSFT.csv
+//! ```
+//! The data in each file should be formatted as follows:
+//!  
 //!
 //! ```
 //!  Column |            Type             | Collation | Nullable | Default
@@ -144,7 +178,6 @@ pub fn main() {
   debug!("Target returns path: {}", target_returns_path);
 
   // Init sequence
-  
   env_logger::init();
   info!("Starting grammatical revolution");
   info!("Initializing tickers");
@@ -406,12 +439,5 @@ mod tests {
   #[test]
   fn it_works() {
     assert_eq!(2 + 2, 4);
-  }
-
-  #[test]
-  fn test_open_tickers() {
-    let tickers = open_tickers("test_tickers.txt");
-    let first = &tickers[0];
-    assert_eq!("MMM", first);
   }
 }
