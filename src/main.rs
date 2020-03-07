@@ -3,19 +3,19 @@
 //!
 //! # Overview
 //!
-//! 
+//!
 //! ## Directory structure
 //! Helix pulls data from a directory with the following structure
-//! 
+//!
 //! ```
 //! root/
 //!   returns.txt
-//!   /data 
+//!   /data
 //!   /results
 //! ```
-//! 
+//!
 //! ### Returns file
-//! 
+//!
 //! `returns.txt` should contain the returns that you're trying to predict in the following format
 //! `epoch_time, next_ret`
 //!  
@@ -23,15 +23,15 @@
 //! 1234334,0.001
 //! 123456,0.012
 //! ```
-//! 
+//!
 //! ### Data directory
-//! 
-//! The data directory should house the pool of pricing data by ticker. 
-//! 
+//!
+//! The data directory should house the pool of pricing data by ticker.
+//!
 //! (Describe this pool)
-//! 
+//!
 //! Each file should be named with the ticker symbol followed by the csv extension.
-//! 
+//!
 //! ```
 //! AAPL.csv
 //! MSFT.csv
