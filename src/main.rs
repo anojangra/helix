@@ -14,10 +14,10 @@
 //!   /results
 //! ```
 //!
-//! ### Returns file
+//! ### Returns file (Y values)
 //!
 //! `returns.txt` should contain the returns that you're trying to predict in the following format
-//! `epoch_time, next_ret`
+//! `epoch_time, next_ret`. `returns.txt` should not include a column.
 //!  
 //! ```
 //! 1234334,0.001
@@ -31,34 +31,24 @@
 //! (Describe this pool)
 //!
 //! Each file should be named with the ticker symbol followed by the csv extension.
+//! Helix will parse the ticker names from filename.
 //!
 //! ```
 //! AAPL.csv
 //! MSFT.csv
-//! ```
-//! The data in each file should be formatted as follows:
+//! ...
+//! 
+//! The data in each file should have the following tabular structure with not header:
 //!  
-//!
 //! ```
-//!  Column |            Type             | Collation | Nullable | Default
-//! --------+-----------------------------+-----------+----------+---------
-//!  ticker | text                        |           |          |
-//!  ts     | timestamp without time zone |           | not null |
-//!  open   | numeric                     |           |          |
-//!  high   | numeric                     |           |          |
-//!  low    | numeric                     |           |          |
-//!  close  | numeric                     |           |          |
-//!  volume | numeric                     |           |          |
-//!
+//! ticker, ts (epoch), open, high, low, close, volume
 //! ```
 //!
-//! This would be a "tall" table of securities price data.
-//!
-//! Here's a summary of local crates:
-//! * Forge - genetic algorthims
-//! * Vger - trade algorithms
-//! * Writer - writes to disk
-//! * Repo - save to database
+//! Helis is made of the following local crates:
+//! * Forge -   genetic algorthims
+//! * Vger -    trade strategies or "genes"
+//! * Writer -  writes to disk
+//! * Repo -    save to database (deprecated - writing results directory to file)
 //!
 //!
 //! ## Config
@@ -66,30 +56,12 @@
 //! ### Helix Config
 //!
 //! Set up requires you to set config `TARGET_TICKER`, `FITTEST` and `POPULATION_SIZE`
-//! * `TARGET_TICKER` - the ticker symbol of the security your looking for trading signals for
-//! * `FITTEST` - the number of fittest chromosomes to use for the pool in the next generation
+//! * `FITTEST` - the number of fittest chromosomes to use for the pool in the next generation (the most fit chromosomes)
 //! * `POPULATION_SIZE` - the population size of the pool
 //!
 //! ### Forge Config
 //!
-//! You'll need to update the the tickers in the forge config file with the universe of symbols
-//! that you'll use in genetic algorithms.
-//! ```
-//! pub static TICKERS: [&str; 13] = [
-//!	"coinbaseUSD",
-//!	"zaifJPY",
-//!	"bitstampUSD",
-//!	"coincheckJPY",
-//!	"btcnCNY",
-//!	"bitflyerJPY",
-//!	"btceUSD",
-//!	"btctradeCNY",
-//!	"coinbaseEUR",
-//!	"bitfinexUSD",
-//!	"fiscoJPY",
-//!	"krakenEUR",
-//!	"krakenUSD"];
-//! ```
+//!
 extern crate clap;
 #[macro_use]
 extern crate log;
