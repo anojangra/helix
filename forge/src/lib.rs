@@ -140,9 +140,9 @@ fn generate_dna(len: i32) -> Dna {
 
 /// evolve chromosomes
 ///
-/// When evolving chromsomes we take the fittest 500 chromosomes and generate a pool
-/// of ranked chromosomes. Better chromosomes are more frequest in the pool. Based on the
-/// desired size of the new population we pull two randome dnas and have them mate.
+/// When evolving chromosomes we take the fittest 500 chromosomes and generate a pool
+/// of ranked chromosomes. Better chromosomes are more frequent in the pool. Based on the
+/// desired size of the new population we pull two random dnas and have them mate.
 pub fn evolve(
   ranked_chromosomes: Vec<Chromosome>,
   generation: i32,

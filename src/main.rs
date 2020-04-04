@@ -387,7 +387,7 @@ pub fn process_chromosome(
 pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
   let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
     .into_iter()
-    .filter(|c| c.num_of_trades > 100)
+    .filter(|c| c.num_of_trades > 500)
     .collect();
   filtered_chromosomes.sort_by_key(|c| c.percentage_winners as i32);
 
