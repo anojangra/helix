@@ -148,11 +148,13 @@ pub fn evolve(
   generation: i32,
   tickers: &Vec<String>,
   target_ticker: &str,
+  fittest: usize,
+  population_size: i32
 ) -> Vec<Chromosome> {
-  let start = &ranked_chromosomes.len() - config::FITTEST;
+  let start = &ranked_chromosomes.len() - fittest;
   let fittest_chromosomes = &ranked_chromosomes[start..];
   let pool = generate_pool(fittest_chromosomes);
-  let dnas = mate(&pool);
+  let dnas = mate(&pool, population_size);
   generate_chromosomes(dnas.clone(), generation, target_ticker, tickers)
 }
 
@@ -167,11 +169,11 @@ fn generate_pool(ranked_chromosomes: &[Chromosome]) -> Vec<Dna> {
   pool
 }
 
-fn mate(pool: &Vec<Dna>) -> Vec<Dna> {
+fn mate(pool: &Vec<Dna>, population_size: i32) -> Vec<Dna> {
   debug!("mate");
   let mut rng = thread_rng();
   let mut new_dnas: Vec<Dna> = Vec::new();
-  for _i in 0..config::POPULATION_SIZE {
+  for _i in 0..population_size {
     let x_dna = get_random_dna(&pool);
     let y_dna = get_random_dna(&pool);
     let splice_point = rng.gen_range(0, x_dna.len());

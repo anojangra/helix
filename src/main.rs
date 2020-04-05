@@ -287,7 +287,7 @@ fn generate_chromosomes(
     let dnas = forge::generate_dnas(12, config::POPULATION_SIZE);
     return forge::generate_chromosomes(dnas.clone(), generation, target_ticker, tickers);
   } else {
-    return forge::evolve(ranked_chromosomes, generation, tickers, target_ticker);
+    return forge::evolve(ranked_chromosomes, generation, tickers, target_ticker, config::FITTEST, config::POPULATION_SIZE);
   }
 }
 

@@ -8,7 +8,7 @@ RUST_LOG=debug ./helix --pool_description btc-exchanges --repo_pathname /home/ch
 
 ```
 cargo build --release
-
+sudo mv target/release/helix /usr/local/bin
 RUST_LOG=info ./helix
 ```
 
