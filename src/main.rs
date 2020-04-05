@@ -89,7 +89,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn main() {
   let matches = App::new("helix")
-    .version("v0.1-beta")
+    .version("v0.2-beta")
     .author("choiway <waynechoi@gmail.com>")
     .about("Genetic Algorithm for Financial Data")
     .arg(
