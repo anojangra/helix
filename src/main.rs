@@ -89,7 +89,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn main() {
   let matches = App::new("helix")
-    .version("v0.2-beta")
+    .version("v0.3-beta")
     .author("choiway <waynechoi@gmail.com>")
     .about("Genetic Algorithm for Financial Data")
     .arg(
@@ -175,6 +175,7 @@ pub fn main() {
     let (chromosomes_tx, chromosomes_rx) = init_chromosomes_channel();
     let (throttle_tx, throttle_rx) = init_throttle(num_of_threads);
     // Check completed chromosomes
+    info!("Processing chromosomes for generation: {}", generation);
     process_chromosomes(
       chromosomes,
       &mut completed_chromosomes,
@@ -185,14 +186,15 @@ pub fn main() {
       throttle_rx,
       &backtest_id,
     );
-
+    info!("Updating chromosomes");
     let updated_chromosomes: Vec<Chromosome> = chromosomes_rx
       .iter()
       .take(chromosomes_len)
       .map(|c| c)
       .collect();
-
+    info!("Ranking chromosomes");
     ranked_chromosomes = rank_chromosomes(updated_chromosomes);
+    info!("Writing chromosomes");
     writer::write_chromosomes(&ranked_chromosomes, generation, &backtest_id);
   }
 
@@ -385,16 +387,24 @@ pub fn process_chromosome(
 /// makes the starting index 9.
 /// ```
 pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome> {
+  // Filter chromosomes by number of trades
   let mut filtered_chromosomes: Vec<Chromosome> = updated_chromosomes
     .into_iter()
-    .filter(|c| c.num_of_trades > 500)
+    .filter(|c| c.num_of_trades > 100)
     .collect();
-  filtered_chromosomes.sort_by_key(|c| c.percentage_winners as i32);
-
+  // Sort chromosomes
+  // Need to use sort_by for vectors since there's something quirky about
+  // comparing f32 in Rust
+  filtered_chromosomes.sort_by(|a, b| a.percentage_winners.partial_cmp(&b.percentage_winners).unwrap());
+  // Calculate starting index
+  // The data is sorted in ascending order resulting in the fittest results
+  // to be at the tail of the array. Therefore, the start index is the length
+  // of the vector minus the number of fittest chromosomes we're looking for
   let end_idx = filtered_chromosomes.len() as i32;
   let fittest = config::FITTEST as i32;
   let start_idx = end_idx - fittest;
-
+  // Since we sort in ascending order we have to run this for tag the 
+  // top fittest chromosomes 
   for i in start_idx..end_idx {
     let chromosome = &mut filtered_chromosomes[i as usize];
     let negative_rank = (end_idx - i - fittest - 1) as i32;
