@@ -89,7 +89,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn main() {
   let matches = App::new("helix")
-    .version("v0.3-beta")
+    .version("v0.4-beta")
     .author("choiway <waynechoi@gmail.com>")
     .about("Genetic Algorithm for Financial Data")
     .arg(
@@ -228,7 +228,7 @@ fn get_tickers(repo_path: &str) -> Vec<String> {
 // We add epoch to differentiate between different runs of the same target-pool
 //
 fn generate_backtest_id(pool_description: &str, target_ticker: &str) -> String {
-  let id = format!("{}::{}", pool_description, target_ticker);
+  let id = format!("{}_{}", pool_description, target_ticker);
   let start = SystemTime::now();
   let epoch = start
     .duration_since(UNIX_EPOCH)
@@ -395,7 +395,7 @@ pub fn rank_chromosomes(updated_chromosomes: Vec<Chromosome>) -> Vec<Chromosome>
   // Sort chromosomes
   // Need to use sort_by for vectors since there's something quirky about
   // comparing f32 in Rust
-  filtered_chromosomes.sort_by(|a, b| a.percentage_winners.partial_cmp(&b.percentage_winners).unwrap());
+  filtered_chromosomes.sort_by(|a, b| a.kelly.partial_cmp(&b.kelly).unwrap());
   // Calculate starting index
   // The data is sorted in ascending order resulting in the fittest results
   // to be at the tail of the array. Therefore, the start index is the length
