@@ -1,6 +1,6 @@
 # Helix
 
-Helix uses gramatical evolution to generate trading signals.
+An implementation of a genetic algortihm that uses grammatical evolution to find trading signals
 
 ## Build
 
@@ -74,9 +74,9 @@ AAPL,954374400,133.56,137.69,125.44,125.75,3700000
 AAPL,954460800,127.44,137.25,126.0,135.81,3612800
 ```
 
-### Results
+## Results
 
-## Trade Pnl of trading strategies
+### Trade Pnl of trading strategies
 
 Each trading strategy is saved in a separate file with each row representing a TradePnl with the backtest id added at the beginning of the row.
 
@@ -103,7 +103,7 @@ qqq::QQQ-1584936501.899630481s	fffea29d-a468-4129-9cb5-2ba958c8682b	1000857600	{
 qqq::QQQ-1584936501.899630481s	fffea29d-a468-4129-9cb5-2ba958c8682b	1000944000	{gapdown:SIRI:195,condowndays:ADI:255}	{0,0}	QQQ	0	1	-0.026924014	0
 ```
 
-## Generation (Gene Pool)
+### Generation (Gene Pool)
 
 Each generation is saved in a separate file with each row representing a Chromosome with a the backtest id added at the beginning of the row.
 
@@ -137,13 +137,3 @@ qqq::QQQ-1584936501.899630481s	103a962c-42b3-4d97-ba9c-24cc7d232cb4	QQQ	stdeva:A
 qqq::QQQ-1584936501.899630481s	1b779947-db04-4238-bd7d-56d0fb71957a	QQQ	stdeva:AMGN:30	{102,206,220,30,203,122,36,164,133,170,123,152}	3	1	-8.153626	-0.4086216	0.00027535894	-0.0022451738	-0.29667333	182	92	90	0.50549453	0
 qqq::QQQ-1584936501.899630481s	0221aa5e-e445-4085-8ca9-1a59e726ef9d	QQQ	stdevb:CTAS:146	{212,137,31,146,152,1,30,80,61,155,43,87}	3	1	2.5284703	0.33157846	0.00024836737	0.00062798953	0.27323624	528	296	231	0.56060606	0
 ```
-
-## Build
-
-```
-cargo build --release
-sudo mv target/release/helix /usr/local/bin
-RUST_LOG=info ./helix
-```
-
-
